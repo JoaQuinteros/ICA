@@ -1,0 +1,106 @@
+{% load static  %}
+
+<header class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <nav class="container-xxl">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarToggler">
+            <div class="navbar-nav justify-content-start">
+                <div class="nav-item">
+                    <a class="nav-link {% if app == 'Inicio' %}active{% endif %}" href="{% url 'home' %}">
+                        {% if app == 'Inicio' %}
+                            <i class="bi bi-house-fill me-1"></i>
+                        {% else %}
+                            <i class="bi bi-house me-1"></i>
+                        {% endif %}
+                        Inicio
+                    </a>
+                </div>
+            </div>
+            <div class="navbar-nav justify-content-center flex-grow-1">
+                <div class="nav-item dropdown me-1">
+                    <a class="nav-link dropdown-toggle {% if app == 'income' %}active{% endif %}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if app == 'income' %}
+                            <i class="bi bi-arrow-down-left-circle-fill me-1"></i>
+                        {% else %}
+                            <i class="bi bi-arrow-down-left-circle me-1"></i>
+                        {% endif %}
+                            Ingresos
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'customer_list' %}">Clientes</a></li>
+                        <li><a class="dropdown-item" href="{% url 'budget_list' %}">Presupuestos</a></li>
+                        <li><a class="dropdown-item" href="{% url 'hiring_list' %}">Contrataciones</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% comment %} <li><a class="dropdown-item" href="{% url 'invoice_list' %}">Facturación</a></li> {% endcomment %}
+                    </ul>
+                </div>
+                <div class="nav-item dropdown me-1">
+                    <a class="nav-link dropdown-toggle {% if app == 'expenses' %}active{% endif %}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if app == 'expenses' %}
+                            <i class="bi bi-arrow-up-right-circle-fill me-1"></i>
+                        {% else %}
+                            <i class="bi bi-arrow-up-right-circle me-1"></i>
+                        {% endif %}
+                            Egresos
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'supplier_list' %}">Proveedores</a></li>
+                        <li><a class="dropdown-item" href="{% url 'expensesinvoice_list' %}">Gastos</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'expensespayment_list' %}">Pagos</a></li>
+                    </ul>
+                </div>
+                <div class="nav-item dropdown me-1">
+                    <a class="nav-link dropdown-toggle {% if app == 'inventory' %}active{% endif %}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if app == 'inventory' %}
+                        <i class="bi bi-box-seam-fill me-1"></i>
+                        {% else %}
+                        <i class="bi bi-box-seam me-1"></i>
+                        {% endif %}
+                        Inventario
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'servicetype_list' %}">Servicios</a></li>
+                        <li><a class="dropdown-item" href="{% url 'warehouse_list' %}">Depósitos</a></li>
+                        <li><a class="dropdown-item" href="{% url 'stock_list' %}">Stock</a></li>
+                    </ul>
+                </div>
+                <div class="nav-item dropdown me-1">
+                    <a class="nav-link dropdown-toggle {% if app == 'accounting' %}active{% endif %}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if app == 'accounting' %}
+                            <i class="bi bi-calculator-fill me-1"></i>
+                        {% else %}
+                            <i class="bi bi-calculator me-1"></i>
+                        {% endif %}
+                        Contabilidad
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'cuenta_list' %}">Cuentas contables</a></li>
+                        <li><a class="dropdown-item" href="{% url 'taxtype_list' %}">Impuestos</a></li>
+                        <li><a class="dropdown-item" href="{% url 'asiento_list' %}">Libro diario</a></li>
+                        <li><a class="dropdown-item disabled" href="#">Reportes</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="navbar-nav justify-content-end">
+                <div class="nav-item dropdown me-1">
+                    <a class="nav-link dropdown-toggle {% if app == 'configuration' %}active{% endif %}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if app == 'configuration' %}
+                            <i class="bi bi-gear-fill me-1"></i>
+                        {% else %}
+                            <i class="bi bi-gear me-1"></i>
+                        {% endif %}
+                        Configuración
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'operator_list' %}">Operarios</a></li>
+                        <li><a class="dropdown-item" href="{% url 'task_list' %}">Tareas</a></li>
+                        <li><a class="dropdown-item" href="{% url 'paymentmethod_list' %}">Formas de pago</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>

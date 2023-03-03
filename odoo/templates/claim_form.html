@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static widget_tweaks %}
+
+{% block content %}
+
+    {% include 'messages.html' %}
+
+    <h1 class="my-4">Generar un nuevo reclamo</h1>
+    
+    <div class="card text-center mt-3">
+        <div class="card-header">
+            <h5 class="my-2">{{ contract.localidad }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-sm-3">
+                    <div class="input-group">
+                        <span class="input-group-text" style="width:40%">Estado</span>
+                        {% if contract.active %}
+                            <span class="form-control">Activo<i class="bi bi-check-circle ms-2 text-success"></i></span>
+                        {% else %}
+                            <span class="form-control">Inactivo<i class="bi bi-x-circle ms-2 text-danger"></i></span>
+                        {% endif %}
+                    </div>
+                    <div class="input-group mt-1">
+                        <span class="input-group-text" style="width:40%">Suspendido</span>
+                        {% if contract.is_terminated %}
+                            <span class="form-control">Si<i class="bi bi-check-circle ms-2 text-success"></i></span>
+                        {% else %}
+                            <span class="form-control">No<i class="bi bi-x-circle ms-2 text-danger"></i></span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-sm mt-1">
+                    <div class="card text-center">
+                        <div class="card-header" style="background-color:#e9ecef">Domicilio</div>
+                        <div class="card-body">{{ contract.domicilio }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with WIDGET_ERROR_CLASS='is-invalid' %}
+        <form method="POST" id="claimForm" class="mt-4" novalidate>
+            {% csrf_token %}
+
+            {{ form.reason.label_tag }}
+            {% render_field form.reason %}
+            <div class="invalid-feedback">
+                {{ form.reason.errors|first }}
+            </div>
+
+            {{ form.description.label_tag }}
+            {% render_field form.description %}
+            <div class="invalid-feedback">
+                {{ form.description.errors|first }}
+            </div>
+        </form>
+    {% endwith %}
+
+    <div class="text-center pt-2">
+        <a href="{% url 'index' dni %}" class="btn btn-outline-secondary me-1" role="button">
+            <i class="bi bi-arrow-return-left me-2"></i>Volver
+        </a>
+        <button type="button" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
+                Enviar
+        </button>
+    </div>
+
+
+    <div class="modal fade" id="claimFormConfirmationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Confirmación necesaria</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Desea ingresar un ticket de reclamo con la información ingresada?
+                </div>
+                <div class="modal-footer">
+                    <input type="submit" value="Enviar" class="btn btn-outline-primary m-3" data-bs-dismiss="modal" form="claimForm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}

@@ -1,0 +1,38 @@
+{% if messages %}
+    {% for message in messages %}
+        <div class="container-xxl">
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}
+            alert-dismissible fade show mt-1" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" aria-label="Close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% comment %} {% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="container-xxl">
+                <div class="alert alert-danger alert-dismissible fade show mt-1" role="alert">
+                    {{ error }}
+                    <button type="button" class="btn-close" aria-label="Close"
+                    data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+{% endif %} {% endcomment %}
+
+{% if form.non_field_errors %}
+    {% for error in form.non_field_errors %}
+        <div class="container-xxl">
+            <div class="alert alert-danger alert-dismissible fade show mt-1"
+            role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" aria-label="Close"
+                data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        {% include "bootstrap.html" %}
+
+        <title>Cosmos | {{ page }}</title>
+
+    </head>
+
+    <body class="d-flex flex-column min-vh-100">
+
+        {% include "messages.html" %}
+
+        <div class="container-xxl">
+
+            {% block content %}
+            {% endblock content %}
+
+        </div>
+
+
+    </body>
+
+    {% include "footer.html" %}
+</html>
