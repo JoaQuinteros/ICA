@@ -4,10 +4,16 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
-from odoo.forms import ClaimForm, ClaimForm2, LoginForm
+from odoo.forms import BaseClaimForm, ClaimForm2, LoginForm, TechnicalClaimForm
 from odoo.tasks import get_client_data, get_contract_data
 
 # from odoo.models import Client, Service
+
+
+REASON_CHOICES: Dict[str, Any] = {
+    "technical": "Técnico",
+    "admin": "Administrativo"
+}
 
 
 def index_view(request: HttpRequest, dni: str) -> HttpResponse:
@@ -46,11 +52,25 @@ def claim_create_view(request: HttpRequest, dni: str, id: int) -> HttpResponse:
     context: Dict[str, Any] = {}
     context["page"] = "Reclamo"
     # service = Service.objects.get(pk=id)
+    
+    context["reason_choices"] = REASON_CHOICES
+    
+    claim_type: str = request.GET.get("reason")
+    data: Dict[str, str] = {"reason": claim_type}
+    context["selected_reason"] = claim_type
+    has_open_claim = False  # Hacer la validación en odoo si tiene un reclamo de ese tipo abierto.
+    if claim_type == "technical":
+        form = TechnicalClaimForm(request.POST or None, initial=data, has_open_claim=has_open_claim)
+        context["form"] = form
+    elif claim_type == "admin":
+        form = BaseClaimForm(request.POST or None, initial=data)
+        context["form"] = form
+    
     context["dni"] = dni
     contract: Dict[str, Any] = get_contract_data(id)
     context["contract"] = contract
-    form = ClaimForm(request.POST or None)
-    context["form"] = form
+    # form = BaseClaimForm(request.POST or None)
+    # context["form"] = form    
     if request.method == "POST":
         if form.is_valid():
             # form.instance.service = service

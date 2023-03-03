@@ -20,6 +20,7 @@ def add_class_to_label(original_function) -> Any:
 
 forms.BoundField.label_tag = add_class_to_label(forms.BoundField.label_tag)
 
+
 class LoginForm(forms.Form):
     # client_id = forms.CharField(label="ID", max_length=10)
     dni = forms.CharField(
@@ -55,24 +56,49 @@ class LoginForm(forms.Form):
             )
 
 
-class ClaimForm(forms.Form):
+class BaseClaimForm(forms.Form):
+    def __init__(self, *args, has_open_claim, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if has_open_claim:
+            self.fields.pop("reason")
+            self.fields.pop("name")
+            self.fields.pop("phone_number")
+            self.fields.pop("email")
+            self.fields.pop("files")
     
-    REASON_CHOICES = [
-        ('ADMIN', 'Administrativo'),
-        ('TECHNIC', 'Técnico'),
-    ]
-
-
     reason = forms.ChoiceField(
-        choices = REASON_CHOICES,
-        widget = forms.Select(
-            attrs = {
-                'class': 'form-select',
-            }
-        ),
-        label = "Motivo",
+        widget = forms.HiddenInput(),
     )
 
+    name = forms.CharField(
+        max_length = 100,
+        widget = forms.TextInput(
+            attrs = {
+                'class': 'form-control',
+            }
+        ),
+        label = 'Nombre completo',
+    )
+
+    phone_number = forms.CharField(
+        max_length = 10,
+        widget = forms.TextInput(
+            attrs = {
+                'class': 'form-control',
+            }
+        ),
+        label = 'Número de teléfono de contacto',
+    )
+    
+    email = forms.EmailField(
+        widget = forms.EmailInput(
+            attrs = {
+                'class': 'form-control',
+            }
+        ),
+        label = 'Email de contacto',
+    )
+    
     description = forms.CharField(
         max_length = 100,
         widget = forms.Textarea(
@@ -83,6 +109,19 @@ class ClaimForm(forms.Form):
         ),
         label = 'Descripción',
     )
+    
+    files = forms.FileField(
+        label = "Puede adjuntar archivo", 
+        widget = forms.ClearableFileInput(
+            attrs = {
+                'class': 'form-control',
+            }
+        ),
+    )
+    
+
+class TechnicalClaimForm(BaseClaimForm):
+    pass
 
 
 class ClaimForm2(forms.ModelForm):

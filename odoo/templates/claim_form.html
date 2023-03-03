@@ -41,20 +41,49 @@
         </div>
     </div>
 
+    <form>
+        <select class="form-select" onchange="this.form.submit()" name="reason">
+            <option selected disabled>Seleccionar un motivo</option>
+            {% for key, value in reason_choices.items %}
+                <option value="{{ key }}" {% if key == selected_reason %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
     {% with WIDGET_ERROR_CLASS='is-invalid' %}
         <form method="POST" id="claimForm" class="mt-4" novalidate>
             {% csrf_token %}
 
-            {{ form.reason.label_tag }}
             {% render_field form.reason %}
+
+            {{ form.name.label_tag }}
+            {% render_field form.name %}
             <div class="invalid-feedback">
-                {{ form.reason.errors|first }}
+                {{ form.name.errors|first }}
+            </div>
+
+            {{ form.phone_number.label_tag }}
+            {% render_field form.phone_number %}
+            <div class="invalid-feedback">
+                {{ form.phone_number.errors|first }}
+            </div>
+
+            {{ form.email.label_tag }}
+            {% render_field form.email %}
+            <div class="invalid-feedback">
+                {{ form.email.errors|first }}
             </div>
 
             {{ form.description.label_tag }}
             {% render_field form.description %}
             <div class="invalid-feedback">
                 {{ form.description.errors|first }}
+            </div>
+
+            {{ form.files.label_tag }}
+            {% render_field form.files %}
+            <div class="invalid-feedback">
+                {{ form.files.errors|first }}
             </div>
         </form>
     {% endwith %}
