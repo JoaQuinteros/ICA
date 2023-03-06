@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Cliente</li>
+{% endblock breadcrumb %}
+
 {% block content %}
 
     <div class="text-center">
@@ -22,15 +26,11 @@
             <div class="col-sm">
                 <div class="card text-center">
                     <div class="card-header" style="background-color:#e9ecef">Deuda</div>
-                    <div class="card-body">{{ client.credit }}</div>
+                    <div class="card-body">${{ client.credit }}</div>
                 </div>
             </div>
             <div class="col-sm-2 ">
-                {% if client.credit %}
-                    <a class="btn btn-outline-primary" href="{{ payment_url }}">Pagar saldo</a>
-                {% else %}
-                    <a class="btn btn-outline-primary disabled" href="#">Pagar saldo</a>
-                {% endif %}
+                <a class="btn btn-outline-primary" href="{% url 'account_move_list' client.vat %}">Comprobantes</a>
             </div>
         </div>
     </div>
@@ -79,11 +79,5 @@
             </div>
         </div>
     {% endfor %}
-
-    <div class="text-center pt-2 my-4">
-        <a href="{% url 'login' %}" class="btn btn-outline-secondary me-1" role="button">
-            <i class="bi bi-arrow-return-left me-2"></i>Volver
-        </a>
-    </div>
 
 {% endblock content %}

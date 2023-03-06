@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static extra_tags %}
+
+
+{% block breadcrumb %}
+  <li class="breadcrumb-item">
+    <a href="{% url 'index' client.vat %}" class="text-decoration-none" style="color: #E77817">Cliente</a>
+  </li>
+  <li class="breadcrumb-item active">Comprobantes</li>
+{% endblock breadcrumb %}
+
+{% block content %}
+
+  <style>
+    .download:hover .bi-cloud-arrow-down:before {
+        content: "\F294";
+    }
+  </style>
+
+  {% include 'messages.html' %}
+
+  <div class="text-center">
+    <h1 class="my-4">{{ client.name }}</h1>
+    <div class="row align-items-center">
+      <div class="col-sm">
+        <div class="card text-center">
+          <div class="card-header" style="background-color:#e9ecef">DNI / CUIT</div>
+          <div class="card-body">{{ client.vat }}</div>
+        </div>
+      </div>
+      
+      <div class="col-sm">
+        <div class="card text-center">
+          <div class="card-header" style="background-color:#e9ecef">Email</div>
+          <div class="card-body">{{ client.email }}</div>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="card text-center">
+          <div class="card-header" style="background-color:#e9ecef">Deuda</div>
+          <div class="card-body">$ {{ client.credit }}</div>
+        </div>
+      </div>
+      <div class="col-sm-2 ">
+        {% if client.credit %}
+          <a class="btn btn-outline-primary" href="{{ payment_url }}">Pagar saldo</a>
+        {% else %}
+          <a class="btn btn-outline-primary disabled" href="#">Pagar saldo</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table mt-4 align-middle">
+      <thead>
+        <tr>
+          <th scope="col">Tipo</th>
+          <th scope="col">Número</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Emisión</th>
+          <th scope="col">Vencimiento</th>
+          <th scope="col">Referencia</th>
+          <th scope="col">Monto</th>
+          <th scope="col">Saldo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody class="table-group-divider">
+        {% for account_move in page_obj %}
+          <tr>
+            <td>{{ account_move.name|receipt_type }}</td>
+            <td>
+              <span style="color: #E77817">{{ account_move.name|receipt_number }}</span>
+              {% if account_move.access_token %}
+                <a href="{{ account_move.access_token|get_download_url:account_move.id }}" class="download" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Descargar">
+                  <i class="fs-4 ms-2 bi bi-cloud-arrow-down"></i>
+                </a>
+              {% endif %}
+            </td>
+            <td>
+              {% if account_move.invoice_payment_state == "paid" %}
+                <span class="badge rounded-pill text-bg-success">
+                  <i class="me-1 bi bi-check-circle"></i>
+                  Pagado
+                </span>
+              {% elif account_move.invoice_payment_state == "in_payment" %}
+                <span class="badge rounded-pill text-white text-bg-info">
+                  <i class="bi bi-clock"></i>
+                  En proceso de pago
+                </span>
+              {% elif account_move.invoice_payment_state == "not_paid" %}
+                <span class="badge rounded-pill text-bg-danger">
+                  <i class="me-1 bi bi-x-circle"></i>
+                  No pagado
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if account_move.invoice_date %}
+                {{ account_move.invoice_date|format_date }}
+              {% endif %}
+            </td>
+            <td>
+              {% if account_move.invoice_date_due%}
+                {{ account_move.invoice_date_due|format_date }}
+              {% endif %}
+            </td>
+            <td>{{ account_move.ref|receipt_ref }}</td>
+            <td>$ {{ account_move.amount_total }}</td>
+            <td>$ {{ account_move.amount_residual }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.previous_page_number }}</a></li>
+    {% endif %}
+    <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+    {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.next_page_number }}</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
+    {% endif %}
+  </ul>
+
+<script>
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+  const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+
+{% endblock content %}

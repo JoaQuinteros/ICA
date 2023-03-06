@@ -1,3 +1,5 @@
+{% load static widget_tweaks %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,6 +11,25 @@
         {% include "bootstrap.html" %}
 
         <title>Cosmos | {{ page }}</title>
+        <div class="container-xxl">
+            <a href=" {% url 'login' %}">
+                <img class="my-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="100">
+            </a>
+            <div class="border rounded">
+                <ol class="breadcrumb m-2">
+                    <li class="breadcrumb-item ms-2">
+                        <a href="{% url 'login' %}" class="text-decoration-none" style="color: #E77817">
+                        <i class="bi bi-house"></i>
+                        </a>
+                    </li>
+                    {% block breadcrumb %}
+                    {% endblock breadcrumb %}
+                </ol>
+            </div>
+        </div>
+
+
+
 
     </head>
 
