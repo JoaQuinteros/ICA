@@ -40,7 +40,7 @@
             </div>
         </div>
     </div>
-
+    <br>
     <form>
         <select class="form-select" onchange="this.form.submit()" name="reason">
             <option selected disabled>Seleccionar un motivo</option>
@@ -49,12 +49,14 @@
             {% endfor %}
         </select>
     </form>
-
+    {% if ticket_open is False %} 
     {% with WIDGET_ERROR_CLASS='is-invalid' %}
-        <form method="POST" id="claimForm" class="mt-4" novalidate>
+        <form method="POST" id="claimForm" action="{% url 'save_claim' %}" class="mt-4" novalidate>
             {% csrf_token %}
-
             {% render_field form.reason %}
+
+            <input type="hidden" name="dni" value="{{dni}}" >
+            <input type="hidden" name="id" value="{{id}}" >
 
             {{ form.name.label_tag }}
             {% render_field form.name %}
@@ -85,16 +87,86 @@
             <div class="invalid-feedback">
                 {{ form.files.errors|first }}
             </div>
+           <button type="submit" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
+                Enviar
+        </button> 
         </form>
     {% endwith %}
+    
+    {% else %}
 
+    {% if selected_reason == "technical" %}
+    <div class="d-flex py-3 justify-content-between">
+        <h3 class="m-2 text-muted">{{ client.name }} ya generó un reclamo</h3>
+    </div>
+    <div class="d-flex py-3 justify-content-between">
+        <h4 class="m-2 text-muted">Su numero de reclamo es: {{ ticket_open.id }}</h4>
+    </div>
+    {% endif %}
+
+    {% if selected_reason == "request_change_of_address" %}
+    <div class="d-flex py-3 justify-content-between">
+        <h3 class="m-2 text-muted">{{ client.name }} ya generó un cambio de domicilio</h3>
+    </div>
+    <div class="d-flex py-3 justify-content-between">
+        <h4 class="m-2 text-muted">Su numero de gestión es: {{ ticket_open.id }}</h4>
+    </div>
+    {% endif %}
+
+    {% if selected_reason == "change_plan" %}
+    <div class="d-flex py-3 justify-content-between">
+        <h3 class="m-2 text-muted">{{ client.name }} ya generó un cambio de plan</h3>
+    </div>
+    <div class="d-flex py-3 justify-content-between">
+        <h4 class="m-2 text-muted">Su numero de gestión es: {{ ticket_open.id }}</h4>
+    </div>
+    {% endif %}
+
+    {% if selected_reason == "request_unsubscribe" %}
+    <div class="d-flex py-3 justify-content-between">
+        <h3 class="m-2 text-muted">{{ client.name }} ya generó la baja del servicio</h3>
+    </div>
+    <div class="d-flex py-3 justify-content-between">
+        <h4 class="m-2 text-muted">su numero de gestión es: {{ ticket_open.id}}</h4>
+    </div>
+    {% endif %}
+
+    {% if selected_reason == "admin" %}
+    <div class="d-flex py-3 justify-content-between">
+        <h3 class="m-2 text-muted">{{ client.name }} ya realizó una consulta administrativa</h3>
+    </div>
+    <div class="d-flex py-3 justify-content-between">
+        <h4 class="m-2 text-muted">su numero de gestión es: {{ ticket_open.id }}</h4>
+    </div>
+    {% endif %}
+
+    <div class="d-flex py-3 justify-content-between">
+        <h4 class="m-2 text-muted">Descripción: {{ ticket_open.description}}</h4>
+    </div>
+
+    <form method="POST" id="claimForm" action="{% url 'save_comment' %}" class="mt-4" novalidate>
+        {% csrf_token %}
+        {% render_field form.reason %}
+
+        {{ form.description.label_tag }}
+        {% render_field form.description %}
+        <div class="invalid-feedback">
+            {{ form.description.errors|first }}
+        </div>
+
+        <input type="hidden" name="dni" value="{{dni}}" >
+        <input type="hidden" name="id" value="{{id}}" >
+        <button type="submit" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
+            Enviar
+    </button> 
+    </form>
+    
+
+    {% endif %}
     <div class="text-center pt-2">
         <a href="{% url 'index' dni %}" class="btn btn-outline-secondary me-1" role="button">
             <i class="bi bi-arrow-return-left me-2"></i>Volver
         </a>
-        <button type="button" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
-                Enviar
-        </button>
     </div>
 
 

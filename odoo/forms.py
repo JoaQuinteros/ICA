@@ -57,15 +57,17 @@ class LoginForm(forms.Form):
 
 
 class BaseClaimForm(forms.Form):
-    def __init__(self, *args, has_open_claim, **kwargs) -> None:
+    def __init__(self, *args, reason_type, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        if has_open_claim:
-            self.fields.pop("reason")
-            self.fields.pop("name")
-            self.fields.pop("phone_number")
-            self.fields.pop("email")
+        print(reason_type)
+        print( kwargs)
+        if reason_type == "request_change_of_address":
             self.fields.pop("files")
-    
+        elif reason_type == "change_plan":
+            self.fields.pop("files")
+        elif reason_type == "request_unsubscribe":
+            self.fields.pop("files")
+
     reason = forms.ChoiceField(
         widget = forms.HiddenInput(),
     )
@@ -118,13 +120,3 @@ class BaseClaimForm(forms.Form):
             }
         ),
     )
-    
-
-class TechnicalClaimForm(BaseClaimForm):
-    pass
-
-
-class ClaimForm2(forms.ModelForm):
-    class Meta:
-        model = Claim
-        fields: List[str] = ['reason', 'description']
