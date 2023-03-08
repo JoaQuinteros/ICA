@@ -1,11 +1,14 @@
 from typing import Any, Dict, List
 
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
 from odoo.forms import BaseClaimForm, LoginForm
 from odoo.tasks import get_client_data, get_contract_data, get_client_tickets, valid_change_speed_open, valid_admin_open, valid_service_open, valid_unsuscribe_open, valid_change_adress_open
+from odoo.forms import BaseClaimForm, LoginForm
+from odoo.tasks import get_account_data, get_client_data, get_contract_data
 
 # from odoo.models import Client, Service
 
@@ -31,13 +34,12 @@ def index_view(request: HttpRequest, dni: str) -> HttpResponse:
             contract: Dict[str, Any] = get_contract_data(contract_id)  # Se busca la información de cada contrato.
             contracts_list.append(contract)  # Se agrega la información de cada contrato a la lista "contracts_list".
         context["contracts_list"] = contracts_list  # Se envía al contexto la lista de contratos creada.
-
-        context["payment_url"] = f"http://link.integralcomunicaciones.com:4000/linkpago/{client.get('internal_code')}"
     else:
         messages.info(request, 'No se encontró el cliente buscado.')
         return redirect('login')
     # client = Client.objects.get(dni=dni)
     return render(request, 'index.html', context)
+
 
 def login_view(request: HttpRequest) -> HttpResponse:
     context: Dict[str, Any] = {}
@@ -150,3 +152,23 @@ def process_comment_view(request: HttpRequest) -> HttpResponse:
             messages.success(request, "El reclamo se registró de forma exitosa.")
             return redirect('claim_create', dni, id)
     return redirect('claim_create', dni, id)
+
+
+def account_move_list_view(request: HttpRequest, dni: str) -> HttpResponse:
+    context: Dict[str, Any] = {}
+    context["page"] = "Movimientos"
+    client_data = get_client_data(dni)
+    context["client"] = client_data
+    client_id = client_data.get('id')
+    context["payment_url"] = f"http://link.integralcomunicaciones.com:4000/linkpago/{client_data.get('internal_code')}"
+    if client_id:
+        account_move_list = get_account_data(client_id)
+        paginator = Paginator(account_move_list, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context["page_obj"] = page_obj
+        # context["account_move_list"] = account_move_list
+        return render(request, 'account_move_list.html', context)
+    else:
+        messages.info(request, 'No se encontró el cliente buscado.')
+        return redirect('index', dni)

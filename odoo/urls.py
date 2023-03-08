@@ -9,4 +9,5 @@ urlpatterns = [
     path('save_claim/', views.process_claim_view, name='save_claim'),
     path('save_comment/', views.process_comment_view, name='save_comment'),
     #path('claim/(?P<dni>[^/]+)/(?P<id>[0-9]+)/save_claim\\Z', views.process_comment_view, name='save_comment'),
+    path('account_move_list/<str:dni>/', views.account_move_list_view, name='account_move_list'),
 ]

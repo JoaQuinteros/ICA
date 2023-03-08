@@ -1,6 +1,14 @@
 {% extends 'base.html' %}
 {% load static widget_tweaks %}
 
+{% block breadcrumb %}
+  <li class="breadcrumb-item">
+    <a href="{% url 'index' dni %}" class="text-decoration-none" style="color: #E77817">Cliente</a>
+  </li>
+  <li class="breadcrumb-item active">Reclamo</li>
+{% endblock breadcrumb %}
+
+
 {% block content %}
 
     {% include 'messages.html' %}
@@ -41,6 +49,9 @@
         </div>
     </div>
     <br>
+
+    <hr class="border border-dark border-3 my-4">
+
     <form>
         <select class="form-select" onchange="this.form.submit()" name="reason">
             <option selected disabled>Seleccionar un motivo</option>
