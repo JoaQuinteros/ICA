@@ -104,12 +104,23 @@ def valid_change_adress_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     return False
 
 
-def get_account_data(partner_id : str) -> List[Dict[str, Any]]:
+def get_account_data(partner_id: str) -> List[Dict[str, Any]]:
     connection = get_connection()
-    account_model = connection.get_model('account.move')
-    account_data: List[Dict[str, Any]] = account_model.search_read([('partner_id', '=', partner_id)], ['ref', 'partner_id', 'invoice_date', 'invoice_date_due', 'amount_total', 'amount_residual', 'invoice_payment_state', 'name', 'access_token'])
-    print(account_data)
-    print(account_data[0].get("access_token"))
+    account_model = connection.get_model("account.move")
+    account_data: List[Dict[str, Any]] = account_model.search_read(
+        [("partner_id", "=", partner_id)],
+        [
+            "ref",
+            "partner_id",
+            "invoice_date",
+            "invoice_date_due",
+            "amount_total",
+            "amount_residual",
+            "invoice_payment_state",
+            "name",
+            "access_token",
+        ],
+    )
     if account_data:
         return account_data
     return False
