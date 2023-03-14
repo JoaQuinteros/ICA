@@ -3,8 +3,9 @@ from typing import Any, List
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.html import format_html
-
+import os
 from odoo.models import Claim
+from django.conf import settings
 
 
 def add_class_to_label(original_function) -> Any:
@@ -57,20 +58,15 @@ class LoginForm(forms.Form):
 
 
 class BaseClaimForm(forms.Form):
-    def __init__(self, *args, reason_type, **kwargs) -> None:
+    def __init__(self, *args, reason_type, id,**kwargs) -> None:
         super().__init__(*args, **kwargs)
-        print(reason_type)
-        print( kwargs)
         if reason_type == "request_change_of_address":
-            self.fields.pop("files")
+            self.fields.pop("files", '')
         elif reason_type == "change_plan":
-            self.fields.pop("files")
+            self.fields.pop("files", '')
         elif reason_type == "request_unsubscribe":
-            self.fields.pop("files")
+            self.fields.pop("files", '')
 
-    reason = forms.ChoiceField(
-        widget = forms.HiddenInput(),
-    )
 
     name = forms.CharField(
         max_length = 100,
@@ -92,7 +88,7 @@ class BaseClaimForm(forms.Form):
         label = 'Número de teléfono de contacto',
     )
     
-    email = forms.EmailField(
+    email = forms.EmailField(required=True,
         widget = forms.EmailInput(
             attrs = {
                 'class': 'form-control',
@@ -113,10 +109,101 @@ class BaseClaimForm(forms.Form):
     )
     
     files = forms.FileField(
-        label = "Puede adjuntar archivo", 
+        required = False, 
+        label = "Adjuntar archivo (deben ser .pdf, .jpeg, .png)", 
         widget = forms.ClearableFileInput(
             attrs = {
-                'class': 'form-control',
+                'class': 'form-control','accept':'application/pdf, image/jpeg ,image/png',
             }
         ),
     )
+
+    def clean(self) -> None:
+        super().clean()
+        name: str = self.cleaned_data.get("name")
+        if name is None or name.isnumeric():
+            raise ValidationError(
+                {
+                    "name": ValidationError(
+                        "Los datos ingresados no deben contener numéros."
+                    ),
+                }
+            )
+        
+        phone_number: str = self.cleaned_data.get("phone_number")
+        print(phone_number.isnumeric())
+        if phone_number.isnumeric() is False:
+            raise ValidationError(
+                {
+                    "phone_number": ValidationError(
+                        "Los datos ingresados deben ser numéricos."
+                    ),
+                }
+            )
+        
+        email: str = self.cleaned_data.get("email")
+        if email is not None and ('@' not in email or '.com' not in email):
+            raise ValidationError(
+                {
+                    "email": ValidationError(
+                        "Los datos ingresados deben ser de un mail correcto."
+                    ),
+                }
+            )
+
+
+        files = self.cleaned_data.get("files")
+        if files != None and files.size > int(settings.MAX_UPLOAD_SIZE):
+            raise ValidationError(
+                {
+                    "files": ValidationError(
+                        "El tamaño del archivo no puede superar los 5MB"
+                    ),
+                }
+            )
+        
+                #allow_empty_file = True,
+
+class AddInfoCalimForm(forms.Form):
+    def __init__(self, *args, reason_type, id,**kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if reason_type == "request_change_of_address":
+            self.fields.pop("files", '')
+        elif reason_type == "change_plan":
+            self.fields.pop("files", '')
+        elif reason_type == "request_unsubscribe":
+            self.fields.pop("files", '')
+   
+    description = forms.CharField(
+        max_length = 100,
+        widget = forms.Textarea(
+            attrs = {
+                'class': 'form-control',
+                'placeholder': 'Descripción del reclamo...'
+            }
+        ),
+        label = 'Descripción',
+    )
+    
+    files = forms.FileField(
+        required = False, 
+        label = "Adjuntar archivo (deben ser .pdf, .jpeg, .png)", 
+        widget = forms.ClearableFileInput(
+            attrs = {
+                'class': 'form-control','accept':'application/pdf, image/jpeg ,image/png',
+            }
+        ),
+    )
+
+    def clean(self) -> None:
+        super().clean()
+        
+        files = self.cleaned_data.get("files")
+        if files != None and files.size > int(settings.MAX_UPLOAD_SIZE):
+            raise ValidationError(
+                {
+                    "files": ValidationError(
+                        "El tamaño del archivo no puede superar los 5MB"
+                    ),
+                }
+            )

@@ -4,7 +4,9 @@ import odoolib
 import requests
 from decouple import config
 from django.core.exceptions import ValidationError
-
+import re
+from django.conf import settings
+import os.path
 
 def get_connection():
     try:
@@ -47,6 +49,7 @@ def get_client_tickets(id: str) -> Dict[str, Any]:
     for ts in stage_ticket:
         stages_closed.append(ts.get('id'))
     contract_data: List[Dict[str, Any]] = ticket_model.search_read([('suscripcion_id', '=', id),('stage_id','!=', stages_closed)], ['id','number','description','stage_id','partner_id','stage_id','category_id','suscripcion_id'])
+    #,('create_uid','=', 27)
     if contract_data:
         print("Se encontro")
         print(contract_data)
@@ -55,21 +58,12 @@ def get_client_tickets(id: str) -> Dict[str, Any]:
     #for c in contract_data:
     #    print(c)
 
-# def valid_change_speed_open(tickets: Dict[str, Any], claim_ticket) -> Dict[str, Any]:
-#     if tickets is not False:
-#         for ticket in tickets:
-#             if ticket['category_id'][0] == 45:
-#                 print(ticket['category_id'][0])
-#                 print(ticket)
-#                 return ticket
-#     return False
-
 def valid_change_speed_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     if tickets is not False:
         for ticket in tickets:
             if ticket['category_id'][0] == 45:
-                print(ticket['category_id'][0])
-                print(ticket)
+                cleanr = re.compile('<.*?>')
+                ticket['description'] = re.sub(cleanr, '',ticket['description'])
                 return ticket
     return False
 
@@ -77,8 +71,8 @@ def valid_admin_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     if tickets is not False:
         for ticket in tickets:
             if ticket['category_id'][0] == 41:
-                print(ticket['category_id'][0])
-                print(ticket)
+                cleanr = re.compile('<.*?>')
+                ticket['description'] = re.sub(cleanr, '',ticket['description'])
                 return ticket
     return False
 
@@ -86,8 +80,8 @@ def valid_service_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     if tickets is not False:
         for ticket in tickets:
             if ticket['category_id'][0] == 34:
-                print(ticket['category_id'][0])
-                print(ticket)
+                cleanr = re.compile('<.*?>')
+                ticket['description'] = re.sub(cleanr, '',ticket['description'])
                 return ticket
     return False
 
@@ -95,8 +89,8 @@ def valid_unsuscribe_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     if tickets is not False:
         for ticket in tickets:
             if ticket['category_id'][0] == 56:
-                print(ticket['category_id'][0])
-                print(ticket)
+                cleanr = re.compile('<.*?>')
+                ticket['description'] = re.sub(cleanr, '',ticket['description'])
                 return ticket
     return False
 
@@ -104,16 +98,8 @@ def valid_change_adress_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     if tickets is not False:
         for ticket in tickets:
             if ticket['category_id'][0] == 36:
-                print(ticket['category_id'][0])
-                print(ticket)
-                return ticket
-
-def valid_change_adress_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket['category_id'][0] == 36:
-                print(ticket['category_id'][0])
-                print(ticket)
+                cleanr = re.compile('<.*?>')
+                ticket['description'] = re.sub(cleanr, '',ticket['description'])
                 return ticket
     return False
 
@@ -122,7 +108,29 @@ def get_account_data(partner_id : str) -> List[Dict[str, Any]]:
     connection = get_connection()
     account_model = connection.get_model('account.move')
     account_data: List[Dict[str, Any]] = account_model.search_read([('partner_id', '=', partner_id)], ['ref', 'partner_id', 'invoice_date', 'invoice_date_due', 'amount_total', 'amount_residual', 'invoice_payment_state', 'name', 'access_token'])
+    print(account_data)
     print(account_data[0].get("access_token"))
     if account_data:
         return account_data
     return False
+
+def save_claim(dni, id, phone_number, email, description, files):
+    connection = get_connection()
+    archive_model = connection.get_model('ir.attachment')
+    #print(files.size)
+    #print(os.path.getsize(files.size))
+    #if files.size < int(settings.MAX_UPLOAD_SIZE):
+    #    print(files)
+        #name, type = os.path.splitext(files)
+        # if type is '.pdf':
+        #     archive_model.create({'name':id,'type':'binary','datas':file,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/x-pdf'})
+        # elif type is '.png':
+        #     archive_model.create({'name':id,'type':'binary','datas':file,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/x-pdf'})
+        # elif type is '.jpeg':
+        #     archive_model.create({'name':id,'type':'binary','datas':file,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/jpeg'})
+
+
+def add_info_claim(dni, id, description):
+   connection = get_connection()
+   ticket_model = connection.get_model('helpdesk.ticket') 
+   #ticket_model.create({'id':id,'description':description})

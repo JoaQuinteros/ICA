@@ -93,3 +93,4 @@ class Claim(models.Model):
         choices=StatusChoices.choices,
         default=StatusChoices.INGRESADO,
     )    
+

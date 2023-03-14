@@ -11,8 +11,6 @@
 
 {% block content %}
 
-    {% include 'messages.html' %}
-
     <h1 class="my-4">Generar un nuevo reclamo</h1>
     
     <div class="card text-center mt-3">
@@ -62,9 +60,8 @@
     </form>
     {% if ticket_open is False %} 
     {% with WIDGET_ERROR_CLASS='is-invalid' %}
-        <form method="POST" id="claimForm" action="{% url 'save_claim' %}" class="mt-4" novalidate>
+            <form method="POST" id="claimForm" class="mt-4" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
-            {% render_field form.reason %}
 
             <input type="hidden" name="dni" value="{{dni}}" >
             <input type="hidden" name="id" value="{{id}}" >
@@ -98,9 +95,12 @@
             <div class="invalid-feedback">
                 {{ form.files.errors|first }}
             </div>
-           <button type="submit" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
+
+
+            <input value="Enviar" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
+       <!--   <button type="submit" class="btn btn-outline-primary m-3" id="myBtn" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
                 Enviar
-        </button> 
+        </button>  -->
         </form>
     {% endwith %}
     
@@ -155,7 +155,7 @@
         <h4 class="m-2 text-muted">Descripción: {{ ticket_open.description}}</h4>
     </div>
 
-    <form method="POST" id="claimForm" action="{% url 'save_comment' %}" class="mt-4" novalidate>
+  <!--  <form method="POST" id="claimForm" action="{% url 'save_comment' %}" class="mt-4" novalidate>
         {% csrf_token %}
         {% render_field form.reason %}
 
@@ -170,15 +170,40 @@
         <button type="submit" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
             Enviar
     </button> 
-    </form>
-    
+    </form> -->
+    {% with WIDGET_ERROR_CLASS='is-invalid' %}
+    <form method="POST" id="AddInfoclaimForm" class="mt-4" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
 
+        <input type="hidden" name="dni" value="{{dni}}" >
+        <input type="hidden" name="id" value="{{id}}" >
+
+        {{ formAddInfo.description.label_tag }}
+        {% render_field formAddInfo.description %}
+        <div class="invalid-feedback">
+            {{ formAddInfo.description.errors|first }}
+        </div>
+
+        {{ formAddInfo.files.label_tag }}
+        {% render_field formAddInfo.files %}
+        <div class="invalid-feedback">
+            {{ formAddInfo.files.errors|first }}
+        </div>
+
+        <input value="Enviar" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimInfoFormConfirmationModal">
+        <!-- <button type="submit" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
+            Enviar
+        </button>  -->
+    </form>    
+    {% endwith %}
     {% endif %}
     <div class="text-center pt-2">
         <a href="{% url 'index' dni %}" class="btn btn-outline-secondary me-1" role="button">
             <i class="bi bi-arrow-return-left me-2"></i>Volver
         </a>
     </div>
+
+  
 
 
     <div class="modal fade" id="claimFormConfirmationModal" tabindex="-1">
@@ -197,5 +222,23 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="claimInfoFormConfirmationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Confirmación necesaria</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Desea añadir la información ingresada?
+                </div>
+                <div class="modal-footer">
+                    <input type="submit" value="Enviar" class="btn btn-outline-primary m-3" data-bs-dismiss="modal" form="AddInfoclaimForm">
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 {% endblock content %}
