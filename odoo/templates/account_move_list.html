@@ -55,23 +55,22 @@
     <table class="table mt-4 align-middle">
       <thead>
         <tr>
-          <th scope="col">Tipo</th>
-          <th scope="col">Número</th>
+          <th scope="col">Tipo y número</th>
           <th scope="col">Estado</th>
           <th scope="col">Emisión</th>
           <th scope="col">Vencimiento</th>
           <th scope="col">Referencia</th>
-          <th scope="col">Monto</th>
-          <th scope="col">Saldo</th>
+          <th scope="col">A pagar</th>
+          <th scope="col">Pagos</th>
+          <th scope="col">Histórico</th>
           <th></th>
         </tr>
       </thead>
       <tbody class="table-group-divider">
         {% for account_move in page_obj %}
           <tr>
-            <td>{{ account_move.name|receipt_type }}</td>
             <td>
-              <span style="color: #E77817">{{ account_move.name|receipt_number }}</span>
+              <span style="color: #E77817">{{ account_move.name }}</span>
               {% if account_move.access_token %}
                 <a href="{{ account_move.access_token|get_download_url:account_move.id }}" class="download" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Descargar">
                   <i class="fs-4 ms-2 bi bi-cloud-arrow-down"></i>
@@ -107,8 +106,14 @@
               {% endif %}
             </td>
             <td>{{ account_move.ref|receipt_ref }}</td>
-            <td>$ {{ account_move.amount_total }}</td>
-            <td>$ {{ account_move.amount_residual }}</td>
+            {% if account_move.name|receipt_type != "RE" %}
+              <td>$ {{ account_move.amount_total }}</td>
+              <td> - </td>
+            {% else %}
+              <td> - </td>
+              <td>$ {{ account_move.amount_total }}</td>
+            {% endif %}
+            <td>$ {{ account_move.balance }}</td>
           </tr>
         {% endfor %}
       </tbody>

@@ -7,35 +7,31 @@ register = template.Library()
 
 @register.filter
 def receipt_type(value: str) -> str:
-    receipt_type = value[:2]
-    receipt_type_dict = {
-        "ND" : "Nota de débito",
-        "FA" : "Factura",
-        "RE" : "Recibo",
-        "CP" : "Cupón de pago",
-    }
-    return receipt_type_dict.get(receipt_type)
-
-
-@register.filter
-def receipt_number(value: str) -> str:
-    return value[3:]
+    receipt_type: str = value[:2]
+    return receipt_type
 
 
 @register.filter
 def receipt_ref(value: str) -> str:
-    receipt_ref_length = len(value)
+    receipt_ref_length: int = len(value)
     if value.startswith("Pago"):
-        return value[0:receipt_ref_length//2]
+        return value[0 : receipt_ref_length // 2]
     return value
 
 
 @register.filter
 def format_date(value: str) -> str:
-    date = datetime.strptime(value, "%Y-%m-%d").date()
+    date: datetime = datetime.strptime(value, "%Y-%m-%d").date()
     return date.strftime("%d/%m/%Y")
 
 
 @register.filter
 def get_download_url(access_token: str, id: str):
     return f"https://gestion.integralcomunicaciones.com/my/invoices/{id}?access_token={access_token}&report_type=pdf&download=true"
+
+
+@register.filter
+def balance(value: str) -> str:
+    balance: float = 0.0
+    balance += float(value)
+    return balance
