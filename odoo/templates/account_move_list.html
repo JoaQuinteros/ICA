@@ -50,7 +50,6 @@
       </div>
     </div>
   </div>
-
   <div class="table-responsive">
     <table class="table mt-4 align-middle">
       <thead>
@@ -72,8 +71,8 @@
             <td>
               <span style="color: #E77817">{{ account_move.name }}</span>
               {% if account_move.access_token %}
-                <a href="{{ account_move.access_token|get_download_url:account_move.id }}" class="download" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Descargar">
-                  <i class="fs-4 ms-2 bi bi-cloud-arrow-down"></i>
+                <a href="{{ account_move.access_token|get_download_url:account_move.move_id.0 }}" class="download" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Ver Factura" target="_blank">
+                  <i class="fs-4 ms-2 bi bi-eye"></i>
                 </a>
               {% endif %}
             </td>
@@ -83,35 +82,37 @@
                   <i class="me-1 bi bi-check-circle"></i>
                   Pagado
                 </span>
-              {% elif account_move.invoice_payment_state == "in_payment" %}
+              {% elif account_move.invoice_payment_state != "paid" and account_move.invoice_date_due > today %}
                 <span class="badge rounded-pill text-white text-bg-info">
-                  <i class="bi bi-clock"></i>
-                  En proceso de pago
-                </span>
-              {% elif account_move.invoice_payment_state == "not_paid" %}
-                <span class="badge rounded-pill text-bg-danger">
                   <i class="me-1 bi bi-x-circle"></i>
                   No pagado
                 </span>
+              {% elif account_move.invoice_payment_state != "paid" and today > account_move.invoice_date_due %}
+                <span class="badge rounded-pill text-bg-danger">
+                  <i class="me-1 bi bi-x-circle"></i>
+                  Deuda vencida
+                </span>
               {% endif %}
             </td>
             <td>
-              {% if account_move.invoice_date %}
-                {{ account_move.invoice_date|format_date }}
+              {% if account_move.date_move %}
+                {{ account_move.date_move|format_date }}
+              {% else %}
+                {{ account_move.date|format_date }}
               {% endif %}
             </td>
             <td>
-              {% if account_move.invoice_date_due%}
-                {{ account_move.invoice_date_due|format_date }}
+              {% if account_move.invoice_date_due %}
+                {{ account_move.invoice_date_due|format_date_due }}
               {% endif %}
             </td>
             <td>{{ account_move.ref|receipt_ref }}</td>
             {% if account_move.name|receipt_type != "RE" %}
-              <td>$ {{ account_move.amount_total }}</td>
+              <td>$ {{ account_move.debit }}</td>
               <td> - </td>
             {% else %}
               <td> - </td>
-              <td>$ {{ account_move.amount_total }}</td>
+              <td>$ {{ account_move.credit }}</td>
             {% endif %}
             <td>$ {{ account_move.balance }}</td>
           </tr>
@@ -119,7 +120,6 @@
       </tbody>
     </table>
   </div>
-
   <ul class="pagination justify-content-center">
     {% if page_obj.has_previous %}
       <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>

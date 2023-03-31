@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 import re
 from django.conf import settings
 import os.path
+from datetime import datetime
 
 def get_connection():
     try:
@@ -108,11 +109,12 @@ def get_account_data(partner_id: str) -> List[Dict[str, Any]]:
     connection = get_connection()
     account_model = connection.get_model("account.move")
     account_data: List[Dict[str, Any]] = account_model.search_read(
-        [("partner_id", "=", partner_id)],
+        [("partner_id", "=", partner_id),("state","=","posted")],
         [
+            "id",
             "ref",
             "partner_id",
-            "invoice_date",
+            "date",
             "invoice_date_due",
             "amount_total",
             "amount_residual",
@@ -123,6 +125,69 @@ def get_account_data(partner_id: str) -> List[Dict[str, Any]]:
     )
     if account_data:
         return account_data
+    return False
+
+def get_account_data_move(id) -> List[Dict[str, Any]]:
+    connection = get_connection()
+    account_model = connection.get_model("account.move")
+    account_data: List[Dict[str, Any]] = account_model.search_read(
+        [("id", "=", id),("state","=","posted")],
+        [
+            "id",
+            "ref",
+            "partner_id",
+            "date",
+            "invoice_date_due",
+            "amount_total",
+            "amount_residual",
+            "invoice_payment_state",
+            "name",
+            "access_token",
+        ],
+    )
+    if account_data:
+        return account_data
+    return False
+
+def get_account_line_data(partner_id: str) -> List[Dict[str, Any]]:
+    connection = get_connection()
+    account_line_model = connection.get_model("account.move.line")
+    account_line_list: List[Dict[str, Any]] = account_line_model.search_read(
+        [("partner_id", "=", partner_id),('account_id', '=' ,6),('parent_state', '=' ,"posted")],
+        [
+            # "move_id",
+            #"move_name",
+            "ref",
+            # "partner_id",
+            "date",
+            # "date_maturity",
+            # "debit",
+            # "credit",
+             "move_id",
+             "debit",
+             "credit",
+        ],
+    )
+    if account_line_list:
+        for account_move_line in account_line_list:
+            if account_move_line.get('move_id') is not False:
+                account_move = list(get_account_data_move(account_move_line.get('move_id')[0]))[0]
+                if account_move.get('invoice_date_due') is not False:
+                    date_due : datetime = datetime.strptime(account_move.get('invoice_date_due'), "%Y-%m-%d").date()
+                    account_move_line ['invoice_date_due'] = date_due
+                else:
+                    account_move_line ['invoice_date_due'] = account_move.get('invoice_date_due')
+                account_move_line ['name'] = account_move.get('name')
+                account_move_line ['date_move'] = account_move.get('date')
+                account_move_line ['invoice_payment_state'] = account_move.get('invoice_payment_state')
+                account_move_line ['access_token'] = account_move.get('access_token')
+            else:
+                account_move_line ['name'] = False
+                account_move_line ['date_move'] = False
+                account_move_line ['invoice_date_due'] = False
+                account_move_line ['invoice_payment_state'] = False
+                account_move_line ['access_token'] = False
+        return account_line_list
     return False
 
 def save_claim(dni, id, phone_number, email, description, files):

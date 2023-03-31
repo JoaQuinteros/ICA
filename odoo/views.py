@@ -13,6 +13,7 @@ from django.core.files import File
 from django.conf import settings
 from odoo.tasks import (
     get_account_data,
+    get_account_line_data,
     get_client_data,
     get_client_tickets,
     get_contract_data,
@@ -25,6 +26,7 @@ from odoo.tasks import (
     add_info_claim,
 
 )
+from datetime import datetime
 
 # from odoo.models import Client, Service
 
@@ -165,6 +167,7 @@ def claim_create_view(request: HttpRequest, dni: str, id: int) -> HttpResponse:
 
 def account_move_list_view(request: HttpRequest, dni: str) -> HttpResponse:
     context: Dict[str, Any] = {}
+    context['today'] = datetime.now().date()
     context["page"] = "Movimientos"
     client_data: Dict[str, Any] = get_client_data(dni)
     context["client"] = client_data
@@ -175,15 +178,13 @@ def account_move_list_view(request: HttpRequest, dni: str) -> HttpResponse:
     if client_id:
         account_move_list: List[Dict] = get_account_data(client_id)
         balance: float = 0.0
-        for account_move in reversed(account_move_list):
-            receipt_type: str = account_move.get("name")
-            amount_total: str = account_move.get("amount_total")
-            if receipt_type.startswith("RE"):
-                balance -= float(amount_total)
-            else:
-                balance += float(amount_total)
-            account_move["balance"] = round(balance, 2)
-        paginator = Paginator(account_move_list, 10)
+        account_move_line_list: List[Dict] = get_account_line_data(client_id)
+        #for account_move in reversed(account_move_list):
+        for account_move_line in reversed(account_move_line_list):
+            balance = balance + (account_move_line.get('debit') - account_move_line.get('credit'))
+            account_move_line['balance'] = round(balance, 2)
+            print(account_move_line)
+        paginator = Paginator(account_move_line_list, 10)
         page_number: str = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
         context["page_obj"] = page_obj
