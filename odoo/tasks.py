@@ -243,5 +243,3 @@ def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
                 archive_model.create({'name':name_file,'type':'binary','datas':b64encode(files.read()).decode('utf-8'),'res_name':name_file +'.png','res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/png'})
             elif type_file == '.jpeg':
                 archive_model.create({'name':name_file,'type':'binary','datas':b64encode(files.read()).decode('utf-8'),'res_name':name_file +'.jpeg','res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/jpeg'})
-    #archivo = archive_model.search_read([('id', '=', 179914)])
-    #print(archivo)
