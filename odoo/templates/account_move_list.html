@@ -90,7 +90,7 @@
               {% elif account_move.invoice_payment_state != "paid" and today > account_move.invoice_date_due %}
                 <span class="badge rounded-pill text-bg-danger">
                   <i class="me-1 bi bi-x-circle"></i>
-                  Deuda vencida
+                  Vencido
                 </span>
               {% endif %}
             </td>
@@ -107,7 +107,7 @@
               {% endif %}
             </td>
             <td>{{ account_move.ref|receipt_ref }}</td>
-            {% if account_move.name|receipt_type != "RE" %}
+            {% if account_move.name|receipt_type != "RE" and account_move.name|receipt_type != "NC" %}
               <td>$ {{ account_move.debit }}</td>
               <td> - </td>
             {% else %}

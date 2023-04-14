@@ -136,21 +136,35 @@ def claim_create_view(request: HttpRequest, dni: str, id: int) -> HttpResponse:
                 files = None
                 if request.FILES:
                     files = request.FILES['files']
-                save_claim(dni, id, phone_number, email, description, files)
-                messages.success(request, "El reclamo se registró de forma exitosa.")
+                if claim_type == 'technical':
+                    save_claim(dni, id, 34, phone_number, email, description, files)
+                    messages.success(request, "El reclamo se registró de forma exitosa.")
+                if claim_type == 'admin':
+                    save_claim(dni, id, 41, phone_number, email, description, files)
+                    messages.success(request, "La consulta se registró de forma exitosa.")
+                if claim_type == 'change_plan':
+                    save_claim(dni, id, 45, phone_number, email, description, files)
+                    messages.success(request, "La solicitud se registró de forma exitosa.")
+                if claim_type == 'request_unsubscribe':
+                    save_claim(dni, id, 56, phone_number, email, description, files)
+                    messages.success(request, "La solicitud se registró de forma exitosa.")
+                if claim_type == 'request_change_of_address':
+                    save_claim(dni, id, 36, phone_number, email, description, files)
+                    messages.success(request, "La solicitud se registró de forma exitosa.")
             else:
-                messages.error(request, "El reclamo no se registró hay error en los datos ingresados.")
+                messages.error(request, "El reclamo o solicitud no se registró hay error en los datos ingresados.")
         else:
             if formAddInfo.is_valid():
                 print("VALIDO POR ACA")
                 dni = request.POST.get('dni')
                 id = request.POST.get('id')
+                id_ticket = request.POST.get('id_ticket')
+                ticket_description = request.POST.get('ticket_description')
                 description: str = formAddInfo.cleaned_data.get('description')
-                print(description)
                 files = None
                 if request.FILES:
                     files = request.FILES['files']
-                add_info_claim(dni, id, description)
+                add_info_claim(dni, id, id_ticket, ticket_description, description, files)
                 messages.success(request, "El reclamo se registró de forma exitosa.")
             else:
                 messages.error(request, "El reclamo no se registró hay error en los datos ingresados.")
