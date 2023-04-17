@@ -46,19 +46,19 @@
                 <div class="row align-items-center">
                     <div class="col-sm-3">
                         <div class="input-group">
-                            <span class="input-group-text" style="width:40%">Estado</span>
+                            <span class="input-group-text" style="width:40%">E contrato</span>
                             {% if contract.active %}
                                 <span class="form-control">Activo<i class="bi bi-check-circle ms-2 text-success"></i></span>
                             {% else %}
-                                <span class="form-control">Inactivo<i class="bi bi-x-circle ms-2 text-danger"></i></span>
+                                <span class="form-control">Dado de baja<i class="bi bi-x-circle  ms-2 text-danger"></i></span>
                             {% endif %}
                         </div>
                         <div class="input-group mt-1">
-                            <span class="input-group-text" style="width:40%">Suspendido</span>
-                            {% if contract.is_terminated %}
-                                <span class="form-control">Si<i class="bi bi-x-circle ms-2 text-danger"></i></span>
+                            <span class="input-group-text" style="width:40%">E conexión</span>
+                            {% if contract.ssid_state == 'up' %}
+                                <span class="form-control"><i class="bi bi-wifi" style="font-size: 2.0rem; color: green"></i></span>
                             {% else %}
-                                <span class="form-control">No<i class="bi bi-check-circle ms-2 text-success"></i></span>
+                                <span class="form-control"><i class="bi bi-wifi-off" style="font-size: 2.0rem; color: red"></i></span>
                             {% endif %}
                         </div>
                     </div>

@@ -1,6 +1,4 @@
-import os.path
-import re
-from datetime import datetime
+from base64 import b64encode
 from typing import Any, Dict, List
 
 import odoolib
@@ -57,6 +55,7 @@ def get_contract_data(id: str) -> Dict[str, Any]:
             "ssid_id",
             "sistema_autonomo_id",
             "servicio_suspendido",
+            "ssid_state",
         ],
     )
     if contract_data:
@@ -68,18 +67,17 @@ def get_client_tickets(id: str) -> Dict[str, Any]:
     connection = get_connection()
     ticket_model = connection.get_model("helpdesk.ticket")
     ticket_closed_model = connection.get_model("helpdesk.ticket.stage")
-    stage_ticket = ticket_closed_model.search_read(
-        [("closed", "=", True)]
-    )  # obtain the list of stages of tickets that belongs to tickets that are closed
-    stages_closed = []
-    for ts in stage_ticket:
-        stages_closed.append(ts.get("id"))
+    stages_closed = get_stages_closed()
     contract_data: List[Dict[str, Any]] = ticket_model.search_read(
-        [("suscripcion_id", "=", id), ("stage_id", "!=", stages_closed)],
+        [
+            ("suscripcion_id", "=", id),
+            ("stage_id", "!=", stages_closed),
+            ("create_uid", "=", 27),
+        ],
         [
             "id",
             "number",
-            "description",
+            "portal_description",
             "stage_id",
             "partner_id",
             "stage_id",
@@ -87,14 +85,24 @@ def get_client_tickets(id: str) -> Dict[str, Any]:
             "suscripcion_id",
         ],
     )
-    # ,('create_uid','=', 27)
+    #
     if contract_data:
         print("Se encontro")
         print(contract_data)
         return contract_data
     return False
-    # for c in contract_data:
-    #    print(c)
+
+
+def get_stages_closed():
+    connection = get_connection()
+    stages_closed = []
+    ticket_closed_model = connection.get_model("helpdesk.ticket.stage")
+    stage_ticket = ticket_closed_model.search_read(
+        [("closed", "=", True)]
+    )  # obtain the list of stages of tickets that belongs to tickets that are closed
+    for ts in stage_ticket:
+        stages_closed.append(ts.get("id"))
+    return stages_closed
 
 
 def valid_change_speed_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
@@ -102,7 +110,10 @@ def valid_change_speed_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
         for ticket in tickets:
             if ticket["category_id"][0] == 45:
                 cleanr = re.compile("<.*?>")
-                ticket["description"] = re.sub(cleanr, "", ticket["description"])
+                if ticket["portal_description"] is not False:
+                    ticket["portal_description"] = re.sub(
+                        cleanr, "", ticket["portal_description"]
+                    )
                 return ticket
     return False
 
@@ -112,7 +123,10 @@ def valid_admin_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
         for ticket in tickets:
             if ticket["category_id"][0] == 41:
                 cleanr = re.compile("<.*?>")
-                ticket["description"] = re.sub(cleanr, "", ticket["description"])
+                if ticket["portal_description"] is not False:
+                    ticket["portal_description"] = re.sub(
+                        cleanr, "", ticket["portal_description"]
+                    )
                 return ticket
     return False
 
@@ -122,7 +136,10 @@ def valid_service_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
         for ticket in tickets:
             if ticket["category_id"][0] == 34:
                 cleanr = re.compile("<.*?>")
-                ticket["description"] = re.sub(cleanr, "", ticket["description"])
+                if ticket["portal_description"] is not False:
+                    ticket["portal_description"] = re.sub(
+                        cleanr, "", ticket["portal_description"]
+                    )
                 return ticket
     return False
 
@@ -132,7 +149,10 @@ def valid_unsuscribe_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
         for ticket in tickets:
             if ticket["category_id"][0] == 56:
                 cleanr = re.compile("<.*?>")
-                ticket["description"] = re.sub(cleanr, "", ticket["description"])
+                if ticket["portal_description"] is not False:
+                    ticket["portal_description"] = re.sub(
+                        cleanr, "", ticket["portal_description"]
+                    )
                 return ticket
     return False
 
@@ -142,7 +162,10 @@ def valid_change_adress_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
         for ticket in tickets:
             if ticket["category_id"][0] == 36:
                 cleanr = re.compile("<.*?>")
-                ticket["description"] = re.sub(cleanr, "", ticket["description"])
+                if ticket["portal_description"] is not False:
+                    ticket["portal_description"] = re.sub(
+                        cleanr, "", ticket["portal_description"]
+                    )
                 return ticket
     return False
 
@@ -215,7 +238,7 @@ def get_account_line_data(partner_id: str) -> List[Dict[str, Any]]:
             "debit",
             "credit",
         ],
-    )
+    )  # VALIDAR con tipo de move osea si es RE y NC no sino con el tipo
     if account_line_list:
         for account_move_line in account_line_list:
             if account_move_line.get("move_id") is not False:
@@ -247,23 +270,134 @@ def get_account_line_data(partner_id: str) -> List[Dict[str, Any]]:
     return False
 
 
-def save_claim(dni, id, phone_number, email, description, files):
+def save_claim(dni, id, category, phone_number, email, description, files):
     connection = get_connection()
+    now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
+    description = (
+        "Fecha: "
+        + now
+        + " <br> phone number: "
+        + phone_number
+        + " <br> email: "
+        + email
+        + " <br> descripcion: "
+        + description
+    )
     archive_model = connection.get_model("ir.attachment")
-    # print(files.size)
-    # print(os.path.getsize(files.size))
-    # if files.size < int(settings.MAX_UPLOAD_SIZE):
-    #    print(files)
-    # name, type = os.path.splitext(files)
-    # if type is '.pdf':
-    #     archive_model.create({'name':id,'type':'binary','datas':file,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/x-pdf'})
-    # elif type is '.png':
-    #     archive_model.create({'name':id,'type':'binary','datas':file,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/x-pdf'})
-    # elif type is '.jpeg':
-    #     archive_model.create({'name':id,'type':'binary','datas':file,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/jpeg'})
+    ticket_model = connection.get_model("helpdesk.ticket")
+    client_data: Dict[str, Any] = get_client_data(dni)
+    ticket_model.create(
+        {
+            "partner_id": client_data.get("id"),
+            "suscripcion_id": id,
+            "name": "Reclamo o solicitud web",
+            "description": "-",
+            "category_id": category,
+            "create_uid": 27,
+            "portal_description": description,
+        }
+    )
+    if files:
+        if files.size < int(settings.MAX_UPLOAD_SIZE):
+            name, type_file = os.path.splitext(files)
+            name_file = "ticket_" + str(client_data.get("id"))
+            if type_file is ".pdf":
+                archive_model.create(
+                    {
+                        "name": name_file,
+                        "type": "binary",
+                        "datas": files,
+                        "res_name": id,
+                        "store_fname": id,
+                        "res_model": "helpdesk.ticket",
+                        "res_id": id,
+                        "mimetype": "application/x-pdf",
+                    }
+                )
+            elif type_file is ".png":
+                archive_model.create(
+                    {
+                        "name": name_file,
+                        "type": "binary",
+                        "datas": files,
+                        "res_name": id,
+                        "store_fname": id,
+                        "res_model": "helpdesk.ticket",
+                        "res_id": id,
+                        "mimetype": "application/x-pdf",
+                    }
+                )
+            elif type_file is ".jpeg":
+                archive_model.create(
+                    {
+                        "name": name_file,
+                        "type": "binary",
+                        "datas": files,
+                        "res_name": id,
+                        "store_fname": id,
+                        "res_model": "helpdesk.ticket",
+                        "res_id": id,
+                        "mimetype": "image/jpeg",
+                    }
+                )
 
 
-def add_info_claim(dni, id, description):
+def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
     connection = get_connection()
     ticket_model = connection.get_model("helpdesk.ticket")
-    # ticket_model.create({'id':id,'description':description})
+    archive_model = connection.get_model("ir.attachment")
+    client_data: Dict[str, Any] = get_client_data(dni)
+    now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
+    if ticket_description != "False":
+        description = (
+            ticket_description
+            + "<br> Fecha: "
+            + now
+            + " <br> descripcion: "
+            + description
+        )
+    else:
+        description = "Fecha: " + now + " <br> descripcion: " + description
+    id_ticket_int = int(id_ticket)
+    ticket_model.write(id_ticket_int, {"portal_description": description})
+    if files:
+        if files.size < int(settings.MAX_UPLOAD_SIZE):
+            name, type_file = os.path.splitext(files.name)
+            name_file = "ticket_" + str(id_ticket)
+            res_name = str(id_ticket) + " - " + str(client_data.get("name"))
+            if type_file == ".pdf":
+                archive_model.create(
+                    {
+                        "name": name_file,
+                        "type": "binary",
+                        "datas": b64encode(files.read()).decode("utf-8"),
+                        "res_name": name_file + ".pdf",
+                        "res_model": "helpdesk.ticket",
+                        "res_id": id_ticket,
+                        "mimetype": "application/x-pdf",
+                    }
+                )
+            elif type_file == ".png":
+                archive_model.create(
+                    {
+                        "name": name_file,
+                        "type": "binary",
+                        "datas": b64encode(files.read()).decode("utf-8"),
+                        "res_name": name_file + ".png",
+                        "res_model": "helpdesk.ticket",
+                        "res_id": id_ticket,
+                        "mimetype": "image/png",
+                    }
+                )
+            elif type_file == ".jpeg":
+                archive_model.create(
+                    {
+                        "name": name_file,
+                        "type": "binary",
+                        "datas": b64encode(files.read()).decode("utf-8"),
+                        "res_name": name_file + ".jpeg",
+                        "res_model": "helpdesk.ticket",
+                        "res_id": id_ticket,
+                        "mimetype": "image/jpeg",
+                    }
+                )
