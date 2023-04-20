@@ -1,8 +1,10 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block breadcrumb %}
+
     <li class="breadcrumb-item active">Cliente</li>
+
 {% endblock breadcrumb %}
 
 {% block content %}
@@ -10,27 +12,26 @@
     <div class="text-center">
         <h1 class="my-4">{{ client.name }}</h1>
         <div class="row align-items-center">
-            <div class="col-sm">
+            <div class="col-sm-2">
                 <div class="card text-center">
-                    <div class="card-header" style="background-color:#e9ecef">Dni / CUIT</div>
+                    <div class="card-header" style="background-color:#e9ecef">DNI / CUIT</div>
                     <div class="card-body">{{ client.vat }}</div>
                 </div>
             </div>
-            
             <div class="col-sm">
                 <div class="card text-center">
                     <div class="card-header" style="background-color:#e9ecef">Email</div>
-                    <div class="card-body">{{ client.email }}</div>
+                    <div class="card-body text-break">{{ client.email }}</div>
                 </div>
             </div>
-            <div class="col-sm">
+            <div class="col-sm-2">
                 <div class="card text-center">
                     <div class="card-header" style="background-color:#e9ecef">Deuda</div>
                     <div class="card-body">${{ client.credit }}</div>
                 </div>
             </div>
-            <div class="col-sm-2 ">
-                <a class="btn btn-outline-primary" href="{% url 'account_move_list' client.vat %}">Comprobantes</a>
+            <div class="col-sm-2">
+                <a class="btn btn-outline-primary" href="{% url 'account_movements_list' client.vat %}">Comprobantes</a>
             </div>
         </div>
     </div>
@@ -70,7 +71,7 @@
                     </div>
                     <div class="col-sm-2 mt-1">
                         {% if contract.active and not contract.is_terminated %}
-                            <a class="btn btn-outline-warning" href="{% url 'claim_create' client.vat contract.id %}" >Iniciar Reclamo</a>
+                            <a class="btn btn-outline-warning" href="{% url 'claim_create' client.vat contract.id %}">Iniciar Reclamo</a>
                         {% elif not contract.is_terminated %}
                             <a class="btn btn-outline-warning disabled" href="#">Iniciar Reclamo</a>
                         {% endif %}

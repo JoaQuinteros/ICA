@@ -1,10 +1,14 @@
+import os.path
+import re
 from base64 import b64encode
+from datetime import datetime
 from typing import Any, Dict, List
 
 import odoolib
 import requests
 from decouple import config
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
 
@@ -27,51 +31,79 @@ def get_connection():
         raise ValidationError("No pudimos procesar tu pedido.")
 
 
-def get_client_data(dni: str) -> Dict[str, Any]:
+async def fetch_all_data(dni):
     connection = get_connection()
+
+    client = fetch_client_data(dni, connection)
+    cache.set(f"{dni}", client)
+
+    if client == "Not found":
+        return
+
+    contracts_list = fetch_contracts_list(client.get("contract_ids"), connection)
+
+    if not contracts_list:
+        return
+
+    client["contracts_list"] = contracts_list
+    client["initial_balance"] = fetch_initial_balance(dni, connection)
+    client["account_movements"] = fetch_account_movements(dni, connection)
+    cache.set(f"{dni}", client)
+
+
+# region asd
+
+
+def fetch_client_data(dni, connection):
     client_model = connection.get_model("res.partner")
-    client_data: List[Dict[str, Any]] = client_model.search_read(
+    client_data = client_model.search_read(
         [("vat", "=", dni)],
         ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
-    )
+    )[0]
+
     if client_data:
-        return client_data[0]
-    return False
+        return client_data
+
+    return "Not found"
 
 
-def get_contract_data(id: str) -> Dict[str, Any]:
-    connection = get_connection()
+def fetch_contracts_list(contract_ids, connection):
     contract_model = connection.get_model("contract.contract")
-    contract_data: List[Dict[str, Any]] = contract_model.search_read(
-        [("id", "=", id)],
-        [
-            "id",
-            "active",
-            "is_terminated",
-            "domicilio",
-            "localidad",
-            "latitud",
-            "longitud",
-            "ssid_id",
-            "sistema_autonomo_id",
-            "servicio_suspendido",
-            "ssid_state",
-        ],
-    )
-    if contract_data:
-        return contract_data[0]
-    return False
+    contracts_list = []
+
+    for id in contract_ids:
+        contract_data = contract_model.search_read(
+            [("id", "=", id)],
+            [
+                "id",
+                "active",
+                "is_terminated",
+                "domicilio",
+                "localidad",
+                "latitud",
+                "longitud",
+                "ssid_id",
+                "sistema_autonomo_id",
+                "servicio_suspendido",
+                "ssid_state",
+            ],
+        )[0]
+
+        if contract_data:
+            contracts_list.append(contract_data)
+
+    return contracts_list
 
 
-def get_client_tickets(id: str) -> Dict[str, Any]:
+def fetch_contract_open_tickets(contract_id):
     connection = get_connection()
+    closed_ticket_ids_list = fetch_closed_ticket_ids(connection)
+
     ticket_model = connection.get_model("helpdesk.ticket")
-    ticket_closed_model = connection.get_model("helpdesk.ticket.stage")
-    stages_closed = get_stages_closed()
-    contract_data: List[Dict[str, Any]] = ticket_model.search_read(
+    open_tickets_list = ticket_model.search_read(
         [
-            ("suscripcion_id", "=", id),
-            ("stage_id", "!=", stages_closed),
+            ("suscripcion_id", "=", contract_id),
+            ("stage_id", "!=", closed_ticket_ids_list),
             ("create_uid", "=", 27),
         ],
         [
@@ -85,24 +117,19 @@ def get_client_tickets(id: str) -> Dict[str, Any]:
             "suscripcion_id",
         ],
     )
-    #
-    if contract_data:
-        print("Se encontro")
-        print(contract_data)
-        return contract_data
-    return False
+
+    return open_tickets_list
 
 
-def get_stages_closed():
-    connection = get_connection()
-    stages_closed = []
-    ticket_closed_model = connection.get_model("helpdesk.ticket.stage")
-    stage_ticket = ticket_closed_model.search_read(
-        [("closed", "=", True)]
-    )  # obtain the list of stages of tickets that belongs to tickets that are closed
-    for ts in stage_ticket:
-        stages_closed.append(ts.get("id"))
-    return stages_closed
+def fetch_closed_ticket_ids(connection):
+    closed_tickets_model = connection.get_model("helpdesk.ticket.stage")
+    closed_tickets_list = closed_tickets_model.search_read([("closed", "=", True)])
+
+    closed_ticket_ids_list = []
+    for closed_ticket in closed_tickets_list:
+        closed_ticket_ids_list.append(closed_ticket.get("id"))
+
+    return closed_ticket_ids_list
 
 
 def valid_change_speed_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
@@ -115,19 +142,19 @@ def valid_change_speed_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
                         cleanr, "", ticket["portal_description"]
                     )
                 return ticket
+
     return False
 
 
-def valid_admin_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket["category_id"][0] == 41:
-                cleanr = re.compile("<.*?>")
-                if ticket["portal_description"] is not False:
-                    ticket["portal_description"] = re.sub(
-                        cleanr, "", ticket["portal_description"]
-                    )
-                return ticket
+def valid_admin_open(ticket_list):
+    for ticket in ticket_list:
+        if ticket.get("category_id")[0] == 41:
+            cleanr = re.compile("<.*?>")
+            if ticket.get("portal_description"):
+                ticket["portal_description"] = re.sub(
+                    cleanr, "", ticket["portal_description"]
+                )
+            return ticket
     return False
 
 
@@ -170,10 +197,12 @@ def valid_change_adress_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     return False
 
 
-def get_account_data(partner_id: str) -> List[Dict[str, Any]]:
-    connection = get_connection()
+# endregion
+
+
+def fetch_account_movements(partner_id, connection):
     account_model = connection.get_model("account.move")
-    account_data: List[Dict[str, Any]] = account_model.search_read(
+    account_movements_list = account_model.search_read(
         [("partner_id", "=", partner_id), ("state", "=", "posted")],
         [
             "id",
@@ -188,85 +217,51 @@ def get_account_data(partner_id: str) -> List[Dict[str, Any]]:
             "access_token",
         ],
     )
-    if account_data:
-        return account_data
+    if account_movements_list:
+        return account_movements_list
     return False
 
 
-def get_account_data_move(id) -> List[Dict[str, Any]]:
-    connection = get_connection()
-    account_model = connection.get_model("account.move")
-    account_data: List[Dict[str, Any]] = account_model.search_read(
-        [("id", "=", id), ("state", "=", "posted")],
-        [
-            "id",
-            "ref",
-            "partner_id",
-            "date",
-            "invoice_date_due",
-            "amount_total",
-            "amount_residual",
-            "invoice_payment_state",
-            "name",
-            "access_token",
-        ],
-    )
-    if account_data:
-        return account_data
-    return False
+# def get_account_data_move(id, connection) -> List[Dict[str, Any]]:
+#     account_model = connection.get_model("account.move")
+#     account_data = account_model.search_read(
+#         [("id", "=", id), ("state", "=", "posted")],
+#         [
+#             "id",
+#             "ref",
+#             "partner_id",
+#             "date",
+#             "invoice_date_due",
+#             "amount_total",
+#             "amount_residual",
+#             "invoice_payment_state",
+#             "name",
+#             "access_token",
+#         ],
+#     )
+#     if account_data:
+#         return account_data
+#     return False
 
 
-def get_account_line_data(partner_id: str) -> List[Dict[str, Any]]:
-    connection = get_connection()
-    account_line_model = connection.get_model("account.move.line")
-    account_line_list: List[Dict[str, Any]] = account_line_model.search_read(
+def fetch_initial_balance(partner_id, connection):
+    account_movement_model = connection.get_model("account.move.line")
+    initial_balance = account_movement_model.search_read(
         [
             ("partner_id", "=", partner_id),
             ("account_id", "=", 6),
             ("parent_state", "=", "posted"),
         ],
         [
-            # "move_id",
-            # "move_name",
             "ref",
-            # "partner_id",
             "date",
-            # "date_maturity",
-            # "debit",
-            # "credit",
             "move_id",
             "debit",
             "credit",
         ],
-    )  # VALIDAR con tipo de move osea si es RE y NC no sino con el tipo
-    if account_line_list:
-        for account_move_line in account_line_list:
-            if account_move_line.get("move_id") is not False:
-                account_move = list(
-                    get_account_data_move(account_move_line.get("move_id")[0])
-                )[0]
-                if account_move.get("invoice_date_due") is not False:
-                    date_due: datetime = datetime.strptime(
-                        account_move.get("invoice_date_due"), "%Y-%m-%d"
-                    ).date()
-                    account_move_line["invoice_date_due"] = date_due
-                else:
-                    account_move_line["invoice_date_due"] = account_move.get(
-                        "invoice_date_due"
-                    )
-                account_move_line["name"] = account_move.get("name")
-                account_move_line["date_move"] = account_move.get("date")
-                account_move_line["invoice_payment_state"] = account_move.get(
-                    "invoice_payment_state"
-                )
-                account_move_line["access_token"] = account_move.get("access_token")
-            else:
-                account_move_line["name"] = False
-                account_move_line["date_move"] = False
-                account_move_line["invoice_date_due"] = False
-                account_move_line["invoice_payment_state"] = False
-                account_move_line["access_token"] = False
-        return account_line_list
+    )[-1]
+    if initial_balance:
+        return initial_balance
     return False
 
 
@@ -285,7 +280,7 @@ def save_claim(dni, id, category, phone_number, email, description, files):
     )
     archive_model = connection.get_model("ir.attachment")
     ticket_model = connection.get_model("helpdesk.ticket")
-    client_data: Dict[str, Any] = get_client_data(dni)
+    client_data: Dict[str, Any] = fetch_client_data(dni)
     ticket_model.create(
         {
             "partner_id": client_data.get("id"),
@@ -301,7 +296,7 @@ def save_claim(dni, id, category, phone_number, email, description, files):
         if files.size < int(settings.MAX_UPLOAD_SIZE):
             name, type_file = os.path.splitext(files)
             name_file = "ticket_" + str(client_data.get("id"))
-            if type_file is ".pdf":
+            if type_file == ".pdf":
                 archive_model.create(
                     {
                         "name": name_file,
@@ -314,7 +309,7 @@ def save_claim(dni, id, category, phone_number, email, description, files):
                         "mimetype": "application/x-pdf",
                     }
                 )
-            elif type_file is ".png":
+            elif type_file == ".png":
                 archive_model.create(
                     {
                         "name": name_file,
@@ -327,7 +322,7 @@ def save_claim(dni, id, category, phone_number, email, description, files):
                         "mimetype": "application/x-pdf",
                     }
                 )
-            elif type_file is ".jpeg":
+            elif type_file == ".jpeg":
                 archive_model.create(
                     {
                         "name": name_file,
@@ -346,7 +341,7 @@ def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
     connection = get_connection()
     ticket_model = connection.get_model("helpdesk.ticket")
     archive_model = connection.get_model("ir.attachment")
-    client_data: Dict[str, Any] = get_client_data(dni)
+    client_data: Dict[str, Any] = fetch_client_data(dni)
     now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
     if ticket_description != "False":
         description = (

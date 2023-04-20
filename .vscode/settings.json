@@ -1,9 +1,14 @@
 {
     "cSpell.words": [
+        "csrf",
         "CUIT",
+        "enctype",
+        "helpdesk",
         "jsonrpcs",
         "odoo",
         "odoolib",
-        "pudge"
+        "onchange",
+        "pudge",
+        "suscripcion"
     ]
 }

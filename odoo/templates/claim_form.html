@@ -1,18 +1,18 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static widget_tweaks %}
 
 {% block breadcrumb %}
-  <li class="breadcrumb-item">
-    <a href="{% url 'index' dni %}" class="text-decoration-none" style="color: #E77817">Cliente</a>
-  </li>
-  <li class="breadcrumb-item active">Reclamo</li>
+
+    <li class="breadcrumb-item">
+        <a href="{% url 'index' client.vat %}" class="text-decoration-none" style="color: #E77817">Cliente</a>
+    </li>
+    <li class="breadcrumb-item active">Reclamo</li>
+
 {% endblock breadcrumb %}
 
 
 {% block content %}
 
-    <h1 class="my-4">Generar un nuevo reclamo</h1>
-    
     <div class="card text-center mt-3">
         <div class="card-header">
             <h5 class="my-2">{{ contract.localidad }}</h5>
@@ -30,10 +30,10 @@
                     </div>
                     <div class="input-group mt-1">
                         <span class="input-group-text" style="width:40%">E conexión</span>
-                        {% if contract.ssid_state == 'up' %}
-                            <span class="form-control"><i class="bi bi-wifi" style="font-size: 2.0rem; color: green"></i></span>
+                        {% if contract.ssid_state == "up" %}
+                            <span class="form-control"><i class="bi bi-wifi text-success"></i></span>
                         {% else %}
-                            <span class="form-control"><i class="bi bi-wifi-off" style="font-size: 2.0rem; color: red"></i></span>
+                            <span class="form-control"><i class="bi bi-wifi-off text-danger"></i></span>
                         {% endif %}
                     </div>
                 </div>
@@ -46,168 +46,129 @@
             </div>
         </div>
     </div>
-    <br>
 
-    <hr class="border border-dark border-3 my-4">
-
-    <form>
-        <select class="form-select" onchange="this.form.submit()" name="reason">
-            <option selected disabled>Seleccionar un motivo</option>
-            {% for key, value in reason_choices.items %}
-                <option value="{{ key }}" {% if key == selected_reason %}selected{% endif %}>{{ value }}</option>
-            {% endfor %}
-        </select>
-    </form>
-    {% if ticket_open is False %} 
-    {% with WIDGET_ERROR_CLASS='is-invalid' %}
-            <form method="POST" id="claimForm" class="mt-4" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
-
-            <input type="hidden" name="dni" value="{{dni}}" >
-            <input type="hidden" name="id" value="{{id}}" >
-            <input type="hidden" name="id_contract" value="{{contract.id}}" >
-
-            {{ form.name.label_tag }}
-            {% render_field form.name %}
-            <div class="invalid-feedback">
-                {{ form.name.errors|first }}
-            </div>
-
-            {{ form.phone_number.label_tag }}
-            {% render_field form.phone_number %}
-            <div class="invalid-feedback">
-                {{ form.phone_number.errors|first }}
-            </div>
-
-            {{ form.email.label_tag }}
-            {% render_field form.email %}
-            <div class="invalid-feedback">
-                {{ form.email.errors|first }}
-            </div>
-
-            {{ form.description.label_tag }}
-            {% render_field form.description %}
-            <div class="invalid-feedback">
-                {{ form.description.errors|first }}
-            </div>
-
-            {{ form.files.label_tag }}
-            {% render_field form.files %}
-            <div class="invalid-feedback">
-                {{ form.files.errors|first }}
-            </div>
-
-
-            <input value="Enviar" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
-       <!--   <button type="submit" class="btn btn-outline-primary m-3" id="myBtn" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
-                Enviar
-        </button>  -->
-        </form>
-    {% endwith %}
+    <h1 class="my-4">Generar un nuevo reclamo</h1>
     
-    {% else %}
+    <form>
+        <div class="input-group mb-3">
+            <label class="input-group-text">Seleccione un tipo de reclamo</label>
+            <select class="form-select" onchange="this.form.submit()" name="claim_type">
+                <option disabled selected> --------- </option>
+                {% for key, value in reason_choices.items %}
+                    <option value="{{ key }}" {% if key == selected_reason %}selected{% endif %}>
+                        {{ value }}
+                    </option>
+                {% endfor %}
+            </select>
+          </div>
+    </form>
 
-    {% if selected_reason == "technical" %}
-    <div class="d-flex py-3 justify-content-between">
-        <h3 class="m-2 text-muted">{{ client.name }} ya generó un reclamo</h3>
-    </div>
-    <div class="d-flex py-3 justify-content-between">
-        <h4 class="m-2 text-muted">Su numero de reclamo es: {{ ticket_open.id }}</h4>
-    </div>
+    {% if form %}
+        {% with WIDGET_ERROR_CLASS="is-invalid" %}
+            <form method="POST" id="claim_form" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.name %}
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">{{ form.name.label_tag }}</span>
+                        {% render_field form.name %}
+                        <div class="invalid-feedback">
+                            {{ form.name.errors|first }}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if form.phone_number %}
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">{{ form.phone_number.label_tag }}</span>
+                        {% render_field form.phone_number %}
+                        <div class="invalid-feedback">
+                            {{ form.phone_number.errors|first }}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if form.email %}
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">{{ form.email.label_tag }}</span>
+                        {% render_field form.email %}
+                        <div class="invalid-feedback">
+                            {{ form.email.errors|first }}
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="input-group mb-3">
+                    <span class="input-group-text">{{ form.description.label_tag }}</span>
+                    {% render_field form.description %}
+                </div>
+                {% if form.files %}
+                    <div class="input-group mb-3">
+                        {% render_field form.files %}
+                        <div class="invalid-feedback">
+                            {{ form.files.errors|first }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
+                        Enviar
+                    </button>
+                </div>
+            </form>
+        {% endwith %}
+    
     {% endif %}
 
-    {% if selected_reason == "request_change_of_address" %}
-    <div class="d-flex py-3 justify-content-between">
-        <h3 class="m-2 text-muted">{{ client.name }} ya generó un cambio de domicilio</h3>
-    </div>
-    <div class="d-flex py-3 justify-content-between">
-        <h4 class="m-2 text-muted">Su numero de gestión es: {{ ticket_open.id }}</h4>
-    </div>
-    {% endif %}
-
-    {% if selected_reason == "change_plan" %}
-    <div class="d-flex py-3 justify-content-between">
-        <h3 class="m-2 text-muted">{{ client.name }} ya generó un cambio de plan</h3>
-    </div>
-    <div class="d-flex py-3 justify-content-between">
-        <h4 class="m-2 text-muted">Su numero de gestión es: {{ ticket_open.id }}</h4>
-    </div>
-    {% endif %}
-
-    {% if selected_reason == "request_unsubscribe" %}
-    <div class="d-flex py-3 justify-content-between">
-        <h3 class="m-2 text-muted">{{ client.name }} ya generó la baja del servicio</h3>
-    </div>
-    <div class="d-flex py-3 justify-content-between">
-        <h4 class="m-2 text-muted">su numero de gestión es: {{ ticket_open.id}}</h4>
-    </div>
-    {% endif %}
-
-    {% if selected_reason == "admin" %}
-    <div class="d-flex py-3 justify-content-between">
-        <h3 class="m-2 text-muted">{{ client.name }} ya realizó una consulta administrativa</h3>
-    </div>
-    <div class="d-flex py-3 justify-content-between">
-        <h4 class="m-2 text-muted">su numero de gestión es: {{ ticket_open.id }}</h4>
-    </div>
-    {% endif %}
-
-    {% if ticket_open.portal_description %}
-    <div class="d-flex py-3 justify-content-between">
-        <h4 class="m-2 text-muted">Descripción: {{ ticket_open.portal_description}}</h4>
-    </div>
-    {% endif %}
-
-  <!--  <form method="POST" id="claimForm" action="{% url 'save_comment' %}" class="mt-4" novalidate>
-        {% csrf_token %}
-        {% render_field form.reason %}
-
-        {{ form.description.label_tag }}
-        {% render_field form.description %}
-        <div class="invalid-feedback">
-            {{ form.description.errors|first }}
+        {% comment %} {% if selected_reason == "technical" %}
+        <div class="d-flex py-3 justify-content-between">
+            <h3 class="m-2 text-muted">{{ client.name }} ya generó un reclamo</h3>
         </div>
-
-        <input type="hidden" name="dni" value="{{dni}}" >
-        <input type="hidden" name="id" value="{{id}}" >
-        <button type="submit" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
-            Enviar
-    </button> 
-    </form> -->
-    {% with WIDGET_ERROR_CLASS='is-invalid' %}
-    <form method="POST" id="AddInfoclaimForm" class="mt-4" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
-
-        <input type="hidden" name="dni" value="{{dni}}" >
-        <input type="hidden" name="id" value="{{id}}" >
-        <input type="hidden" name="id_ticket" value="{{ticket_open.id}}" >
-        <input type="hidden" name="ticket_description" value="{{ticket_open.portal_description}}" >
-        <input type="hidden" name="id_contract" value="{{contract.id}}" >
-
-        {{ formAddInfo.description.label_tag }}
-        {% render_field formAddInfo.description %}
-        <div class="invalid-feedback">
-            {{ formAddInfo.description.errors|first }}
+        <div class="d-flex py-3 justify-content-between">
+            <h4 class="m-2 text-muted">Su numero de reclamo es: {{ ticket_open.id }}</h4>
         </div>
+        {% endif %}
 
-        {{ formAddInfo.files.label_tag }}
-        {% render_field formAddInfo.files %}
-        <div class="invalid-feedback">
-            {{ formAddInfo.files.errors|first }}
+        {% if selected_reason == "request_change_of_address" %}
+        <div class="d-flex py-3 justify-content-between">
+            <h3 class="m-2 text-muted">{{ client.name }} ya generó un cambio de domicilio</h3>
         </div>
+        <div class="d-flex py-3 justify-content-between">
+            <h4 class="m-2 text-muted">Su numero de gestión es: {{ ticket_open.id }}</h4>
+        </div>
+        {% endif %}
 
-        <input value="Enviar" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimInfoFormConfirmationModal">
-        <!-- <button type="submit" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
-            Enviar
-        </button>  -->
-    </form>    
-    {% endwith %}
-    {% endif %}
-    <div class="text-center pt-2">
-        <a href="{% url 'index' dni %}" class="btn btn-outline-secondary me-1" role="button">
-            <i class="bi bi-arrow-return-left me-2"></i>Volver
-        </a>
-    </div>
+        {% if selected_reason == "change_plan" %}
+        <div class="d-flex py-3 justify-content-between">
+            <h3 class="m-2 text-muted">{{ client.name }} ya generó un cambio de plan</h3>
+        </div>
+        <div class="d-flex py-3 justify-content-between">
+            <h4 class="m-2 text-muted">Su numero de gestión es: {{ ticket_open.id }}</h4>
+        </div>
+        {% endif %}
+
+        {% if selected_reason == "request_unsubscribe" %}
+        <div class="d-flex py-3 justify-content-between">
+            <h3 class="m-2 text-muted">{{ client.name }} ya generó la baja del servicio</h3>
+        </div>
+        <div class="d-flex py-3 justify-content-between">
+            <h4 class="m-2 text-muted">su numero de gestión es: {{ ticket_open.id}}</h4>
+        </div>
+        {% endif %}
+
+        {% if selected_reason == "admin" %}
+        <div class="d-flex py-3 justify-content-between">
+            <h3 class="m-2 text-muted">{{ client.name }} ya realizó una consulta administrativa</h3>
+        </div>
+        <div class="d-flex py-3 justify-content-between">
+            <h4 class="m-2 text-muted">su numero de gestión es: {{ ticket_open.id }}</h4>
+        </div>
+        {% endif %}
+
+        {% if ticket_open.portal_description %}
+        <div class="d-flex py-3 justify-content-between">
+            <h4 class="m-2 text-muted">Descripción: {{ ticket_open.portal_description}}</h4>
+        </div>
+        {% endif %} {% endcomment %}
+
 
   
 
@@ -246,5 +207,6 @@
         </div>
     </div>
 
+    <script src="{% static 'odoo/js/tooltips.js' %}"></script>
 
 {% endblock content %}
