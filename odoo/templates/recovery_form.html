@@ -3,61 +3,55 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {% include "bootstrap.html" %}
 
-    {% include 'bootstrap.html' %}
+        <title>Cosmos | {{ page }}</title>
 
-    <title>Cosmos | {{ page }}</title>
+        <link rel="stylesheet" href="{% static 'odoo/css/login.css' %}">
+    </head>
 
-    <link rel="stylesheet" href="{% static 'odoo/css/login.css' %}">
+    <body class="d-flex flex-column vh-100 py-0">
+        {% include "messages.html" %}
 
-</head>
+        <div class="container-fluid my-auto text-center">
+            {% with WIDGET_ERROR_CLASS="is-invalid" %}
+                <form method="post" class="form-signin" novalidate>
+                    {% csrf_token %}
 
-<body class="d-flex flex-column vh-100 py-0">
+                    <img class="mb-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
 
-    {% include 'messages.html' %}
+                    <p class="h3 m-3">Recuperación</p>
 
-    <div class="container-fluid my-auto text-center">
+                    <p>Ingrese los siguientes datos para poder revisar su situación y nos comunicaremos con usted a la brevedad.<br>Muchas gracias!</p>
 
-        {% with WIDGET_ERROR_CLASS='is-invalid' %}
-        <form method="post" class="form-signin" novalidate>
-            {% csrf_token %}
+                    {% render_field form.dni_recovery %}
+                    <div class="invalid-feedback">
+                        {{ form.dni_recovery.errors|first }}
+                    </div>
 
-            <img class="mb-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
+                    {% render_field form.client_id %}
+                    <div class="invalid-feedback">
+                        {{ form.client_id.errors|first }}
+                    </div>
+                    
+                    <div class="row gx-2 pt-2 justify-content-center">
+                        <div class="col-auto">
+                            <a class="btn btn-outline-secondary" href="{% url 'login' %}">
+                                <i class="bi bi-arrow-return-left me-2"></i>Volver
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <input type="submit" value="Enviar" class="btn btn-outline-primary">
+                        </div>
+                    </div>
+                </form>
+            {% endwith %}
+        </div>
+    </body>
 
-            <p class="h3 m-3">Recuperación</p>
-
-            <p>Ingrese los siguientes datos para poder revisar su situación. Nos comunicaremos con usted a la brevedad. Muchas gracias!</p>
-
-
-            {% render_field form.dni_recovery %}
-            <div class="invalid-feedback">
-                {{ form.dni_recovery.errors|first }}
-            </div>
-
-            {% render_field form.client_id %}
-            <div class="invalid-feedback">
-                {{ form.client_id.errors|first }}
-            </div>
-            <div class="row gx-2 pt-2 justify-content-center">
-                <div class="col-auto">
-                    <a class="btn btn-outline-secondary" href="{% url 'login' %}"><i class="bi bi-arrow-return-left me-2"></i>Volver</a>
-                </div>
-                <div class="col-auto">
-                    <input type="submit" value="Enviar" class="btn btn-outline-primary">
-                </div>
-            </div>
-        </form>
-
-        {% endwith %}
-
-    </div>
-
-    {% include 'footer.html' %}
-
-</body>
-
+    {% include "footer.html" %}
 </html>

@@ -1,6 +1,7 @@
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 
 
 def add_class_to_label(original_function):
@@ -13,10 +14,29 @@ def add_class_to_label(original_function):
 forms.BoundField.label_tag = add_class_to_label(forms.BoundField.label_tag)
 
 
+def validate_string_has_no_numbers(value):
+    if value.isnumeric():
+        raise ValidationError("Los datos ingresados no pueden contener números.")
+
+
+def validate_id_number_length(value):
+    if len(value) not in [7, 8, 11]:
+        raise ValidationError("Solo se admiten 7, 8 u 11 dígitos.")
+
+
+def validate_phone_number(value):
+    if not len(value) == 10 or not value.isnumeric():
+        raise ValidationError("El teléfono debe contener 10 caracteres numéricos.")
+
+
+def validate_file_size(value):
+    limit = settings.MAX_UPLOAD_SIZE
+    if value.size > limit:
+        raise ValidationError("El tamaño del archivo no puede superar los 5 MB.")
+
+
 class LoginForm(forms.Form):
-    # client_id = forms.CharField(label="ID", max_length=10)
     dni = forms.CharField(
-        label="DNI / CUIT",
         min_length=7,
         max_length=11,
         widget=forms.TextInput(
@@ -25,31 +45,13 @@ class LoginForm(forms.Form):
                 "placeholder": "Número de documento o CUIT",
             }
         ),
+        label="DNI / CUIT",
+        validators=[validate_id_number_length],
     )
-
-    def clean(self) -> None:
-        super().clean()
-        dni: str = self.cleaned_data.get("dni")
-        if dni:
-            if not dni.isnumeric():
-                raise ValidationError(
-                    {
-                        "dni": ValidationError(
-                            "Los datos ingresados deben ser numéricos."
-                        ),
-                    }
-                )
-            elif len(dni) not in [7, 8, 11]:
-                raise ValidationError(
-                    {
-                        "dni": ValidationError("Solo se admiten 7, 8 u 11 dígitos."),
-                    }
-                )
 
 
 class LoginRecoveryForm(forms.Form):
     dni_recovery = forms.CharField(
-        label="DNI / CUIT",
         min_length=7,
         max_length=11,
         widget=forms.TextInput(
@@ -58,6 +60,8 @@ class LoginRecoveryForm(forms.Form):
                 "placeholder": "Número de documento o CUIT",
             }
         ),
+        label="DNI / CUIT",
+        validators=[validate_id_number_length],
     )
     client_id = forms.CharField(
         label="Número de cliente",
@@ -66,25 +70,6 @@ class LoginRecoveryForm(forms.Form):
             attrs={"class": "form-control", "placeholder": "Número de cliente"}
         ),
     )
-
-    def clean(self) -> None:
-        super().clean()
-        dni: str = self.cleaned_data.get("dni")
-        if dni:
-            if not dni.isnumeric():
-                raise ValidationError(
-                    {
-                        "dni": ValidationError(
-                            "Los datos ingresados deben ser numéricos."
-                        ),
-                    }
-                )
-            elif len(dni) not in [7, 8, 11]:
-                raise ValidationError(
-                    {
-                        "dni": ValidationError("Solo se admiten 7, 8 u 11 dígitos."),
-                    }
-                )
 
 
 class BaseClaimForm(forms.Form):
@@ -105,6 +90,7 @@ class BaseClaimForm(forms.Form):
             }
         ),
         label="Nombre completo",
+        validators=[validate_string_has_no_numbers],
     )
 
     phone_number = forms.CharField(
@@ -115,6 +101,7 @@ class BaseClaimForm(forms.Form):
             }
         ),
         label="Número de teléfono de contacto",
+        validators=[validate_phone_number],
     )
 
     email = forms.EmailField(
@@ -142,7 +129,6 @@ class BaseClaimForm(forms.Form):
 
     files = forms.FileField(
         required=False,
-        label="Adjuntar archivo (.pdf, .jpeg o .png)",
         widget=forms.ClearableFileInput(
             attrs={
                 "class": "form-control rounded-end",
@@ -152,49 +138,15 @@ class BaseClaimForm(forms.Form):
                 "data-bs-title": "Adjuntar archivo (.pdf, .jpeg o .png)",
             }
         ),
+        label="Adjuntar archivo (.pdf, .jpeg o .png)",
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["mp3", "avi", "wav"],
+                message="El archivo seleccionado no tiene un formato de sonido válido.",
+            ),
+            validate_file_size,
+        ],
     )
-
-    def clean(self):
-        super().clean()
-        name = self.cleaned_data.get("name")
-        if not name or name.isnumeric():
-            raise ValidationError(
-                {
-                    "name": ValidationError(
-                        "Los datos ingresados no deben contener números."
-                    ),
-                }
-            )
-
-        phone_number = self.cleaned_data.get("phone_number")
-        if not phone_number.isnumeric():
-            raise ValidationError(
-                {
-                    "phone_number": ValidationError(
-                        "Los datos ingresados deben ser numéricos."
-                    ),
-                }
-            )
-
-        # email = self.cleaned_data.get("email")
-        # if not email or ["@", ".com"] not in email:
-        #     raise ValidationError(
-        #         {
-        #             "email": ValidationError(
-        #                 "Los datos ingresados deben ser de un mail correcto."
-        #             ),
-        #         }
-        #     )
-
-        files = self.cleaned_data.get("files")
-        if files and files.size > int(settings.MAX_UPLOAD_SIZE):
-            raise ValidationError(
-                {
-                    "files": ValidationError(
-                        "El tamaño del archivo no puede superar los 5MB."
-                    ),
-                }
-            )
 
 
 class AddClaimInfoForm(forms.Form):

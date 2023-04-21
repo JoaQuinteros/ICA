@@ -2,52 +2,45 @@
 
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<head>
+        {% include "bootstrap.html" %}
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cosmos | Ingreso</title>
 
-    {% include 'bootstrap.html' %}
+        <link rel="stylesheet" href="{% static 'odoo/css/login.css' %}">
+    </head>
 
-    <title>Cosmos | Ingreso</title>
+    <body class="d-flex flex-column vh-100 py-0">
+        {% include "messages.html" %}
 
-    <link rel="stylesheet" href="{% static 'odoo/css/login.css' %}">
+        <div class="container-fluid my-auto text-center">
+            {% with WIDGET_ERROR_CLASS='is-invalid' %}
+                <form method="post" class="form-signin" novalidate>
+                    {% csrf_token %}
 
-</head>
+                    <img class="mb-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
 
-<body class="d-flex flex-column vh-100 py-0">
+                    <p class="h3 m-3 font-weight-normal">Consulta</p>
 
-    {% include 'messages.html' %}
+                    {% render_field form.dni %}
+                    <div class="invalid-feedback">
+                        {{ form.dni.errors|first }}
+                    </div>
 
-    <div class="container-fluid my-auto text-center">
+                    <input type="submit" value="Buscar" class="btn btn-outline-primary m-3">
+                </form>
 
-        {% with WIDGET_ERROR_CLASS='is-invalid' %}
-        <form method="post" class="form-signin" novalidate>
-            {% csrf_token %}
-
-            <img class="mb-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
-
-            <p class="h3 m-3 font-weight-normal">Consulta</p>
-
-            {% render_field form.dni %}
-            <div class="invalid-feedback">
-                {{ form.dni.errors|first }}
-            </div>
-
-            <input type="submit" value="Buscar" class="btn btn-outline-primary m-3">
-        </form>
-
-        <div>
-            <span>Si tiene problemas para <br> realizar su consulta haga click <a
-                    href="{% url 'login_recovery' %}">aquí</a>.</span>
+                <div>
+                    <span>
+                        Si tiene problemas para <br> realizar su consulta haga click <a href="{% url 'login_recovery' %}">aquí</a>.
+                    </span>
+                </div>
+            {% endwith %}
         </div>
-        {% endwith %}
-
-    </div>
-
-    {% include 'footer.html' %}
-
-</body>
-
+    </body>
+        
+    {% include "footer.html" %}
 </html>

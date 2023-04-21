@@ -51,15 +51,15 @@
                             {% if contract.active %}
                                 <span class="form-control">Activo<i class="bi bi-check-circle ms-2 text-success"></i></span>
                             {% else %}
-                                <span class="form-control">Dado de baja<i class="bi bi-x-circle  ms-2 text-danger"></i></span>
+                                <span class="form-control">Dado de baja<i class="bi bi-x-circle ms-2 text-danger"></i></span>
                             {% endif %}
                         </div>
                         <div class="input-group mt-1">
                             <span class="input-group-text" style="width:40%">E conexión</span>
                             {% if contract.ssid_state == 'up' %}
-                                <span class="form-control"><i class="bi bi-wifi" style="font-size: 2.0rem; color: green"></i></span>
+                                <span class="form-control"><i class="bi bi-wifi text-success"></i></span>
                             {% else %}
-                                <span class="form-control"><i class="bi bi-wifi-off" style="font-size: 2.0rem; color: red"></i></span>
+                                <span class="form-control"><i class="bi bi-wifi-off text-danger"></i></span>
                             {% endif %}
                         </div>
                     </div>

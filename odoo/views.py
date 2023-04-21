@@ -29,60 +29,64 @@ REASON_CHOICES = {
 
 async def index_view(request, dni):
     client = cache.get(f"{dni}")
+    context = {
+        "page": "Cliente",
+    }
 
     if not client:
         await fetch_all_data(dni)
         client = cache.get(f"{dni}")
+        context["client"] = client
 
     if client == "Not found":
         messages.info(request, "No se encontró el cliente buscado.")
         return redirect("login")
 
     contracts_list = cache.get(f"{dni}").get("contracts_list")
+    context["contracts_list"] = contracts_list
 
     if not contracts_list:
         messages.info(request, "El cliente no posee contratos.")
         return redirect("login")
 
-    context = {
-        "page": "Cliente",
-        "contracts_list": contracts_list,
-        "client": client,
-    }
     return render(request, "index.html", context)
 
 
 def login_view(request):
     form = LoginForm(request.POST or None)
+    context = {
+        "page": "Login",
+        "form": form,
+    }
 
     if request.method == "POST" and form.is_valid():
         dni = form.cleaned_data.get("dni")
         return redirect("index", dni)
 
-    context = {
-        "page": "Login",
-        "form": form,
-    }
     return render(request, "login.html", context)
 
 
 def login_recovery_view(request):
     form = LoginRecoveryForm(request.POST or None)
+    context = {
+        "page": "Recuperación",
+        "form": form,
+    }
 
     if request.method == "POST" and form.is_valid():
         dni = form.cleaned_data.get("dni")
         return redirect("index", dni)
 
-    context = {
-        "page": "Recuperación",
-        "form": form,
-    }
     return render(request, "recovery_form.html", context)
 
 
 def claim_create_view(request, dni, contract_id):
-    context = {}
     client_data = cache.get(f"{dni}")
+    context = {
+        "client": client_data,
+        "reason_choices": REASON_CHOICES,
+        "page": "Reclamo",
+    }
     claim_type = request.GET.get("claim_type")
     open_tickets_list = fetch_contract_open_tickets(contract_id)
 
@@ -95,9 +99,7 @@ def claim_create_view(request, dni, contract_id):
 
     if claim_type:
         form = BaseClaimForm(
-            request.POST or None,
-            request.FILES or None,
-            claim_type=claim_type,
+            request.POST or None, request.FILES or None, claim_type=claim_type
         )
 
         if open_tickets_list:
@@ -144,67 +146,50 @@ def claim_create_view(request, dni, contract_id):
         if contract.get("id") == contract_id:
             context["contract"] = contract
 
-    if request.method == "POST":
-        if not open_tickets_list:
-            if form.is_valid():
-                dni = request.POST.get("dni")
-                id = request.POST.get("id")
-                name: str = form.cleaned_data.get("name")
-                phone_number: str = form.cleaned_data.get("phone_number")
-                email: str = form.cleaned_data.get("email")
-                description: str = form.cleaned_data.get("description")
-                files = None
-                if request.FILES:
-                    files = request.FILES["files"]
-                if claim_type == "technical":
-                    save_claim(dni, id, 34, phone_number, email, description, files)
-                    messages.success(
-                        request, "El reclamo se registró de forma exitosa."
-                    )
-                if claim_type == "admin":
-                    save_claim(dni, id, 41, phone_number, email, description, files)
-                    messages.success(
-                        request, "La consulta se registró de forma exitosa."
-                    )
-                if claim_type == "change_plan":
-                    save_claim(dni, id, 45, phone_number, email, description, files)
-                    messages.success(
-                        request, "La solicitud se registró de forma exitosa."
-                    )
-                if claim_type == "request_unsubscribe":
-                    save_claim(dni, id, 56, phone_number, email, description, files)
-                    messages.success(
-                        request, "La solicitud se registró de forma exitosa."
-                    )
-                if claim_type == "request_change_of_address":
-                    save_claim(dni, id, 36, phone_number, email, description, files)
-                    messages.success(
-                        request, "La solicitud se registró de forma exitosa."
-                    )
-            else:
-                messages.error(
-                    request,
-                    "El reclamo o solicitud no se registró hay error en los datos ingresados.",
-                )
-            # else:
-            #     if formAddInfo.is_valid():
-            #         dni = request.POST.get("dni")
-            #         id = request.POST.get("id")
-            #         id_ticket = request.POST.get("id_ticket")
-            #         ticket_description = request.POST.get("ticket_description")
-            #         description: str = formAddInfo.cleaned_data.get("description")
-            #         files = None
-            #         if request.FILES:
-            #             files = request.FILES["files"]
-            #         add_info_claim(
-            #             dni, id, id_ticket, ticket_description, description, files
-            #         )
-            #         messages.success(request, "El reclamo se registró de forma exitosa.")
-            #     else:
-            #         messages.error(
-            #             request,
-            #             "El reclamo no se registró hay error en los datos ingresados.",
-            #         )
+    if request.method == "POST" and form.is_valid():
+        form_data = form.cleaned_data.copy()
+        form_data["partner_id"] = client_data.get("id")
+        form_data["contract_id"] = contract_id
+        form_data["category_id"] = int(claim_type)
+        form_data["files"] = request.FILES.get("files")
+
+        # name = form.cleaned_data.get("name")
+        # phone_number = form.cleaned_data.get("phone_number")
+        # email = form.cleaned_data.get("email")
+        # description = form.cleaned_data.get("description")
+        # files = None
+
+        save_claim(form_data)
+
+        if claim_type == 34:
+            message = "El reclamo se registró de forma exitosa."
+        elif claim_type in [36, 45, 56]:
+            message = "La solicitud se registró de forma exitosa."
+        if claim_type == 41:
+            message = "La consulta se registró de forma exitosa."
+
+        messages.success(request, message)
+        return redirect("index", dni)
+
+        # else:
+        #     if formAddInfo.is_valid():
+        #         dni = request.POST.get("dni")
+        #         id = request.POST.get("id")
+        #         id_ticket = request.POST.get("id_ticket")
+        #         ticket_description = request.POST.get("ticket_description")
+        #         description: str = formAddInfo.cleaned_data.get("description")
+        #         files = None
+        #         if request.FILES:
+        #             files = request.FILES["files"]
+        #         add_info_claim(
+        #             dni, id, id_ticket, ticket_description, description, files
+        #         )
+        #         messages.success(request, "El reclamo se registró de forma exitosa.")
+        #     else:
+        #         messages.error(
+        #             request,
+        #             "El reclamo no se registró hay error en los datos ingresados.",
+        #         )
     # # form.instance.service = service
     #         # form.save()
     #         # Cuando se crea un nuevo reclamo, el servicio pasa a tener un reclamo activo.
@@ -213,10 +198,11 @@ def claim_create_view(request, dni, contract_id):
     #         #messages.success(request, "El reclamo se registró de forma exitosa.")
     #         return redirect('index', dni)
 
-    context["client"] = client_data
-    context["reason_choices"] = REASON_CHOICES
-    context["page"] = "Reclamo"
     return render(request, "claim_form.html", context)
+
+
+def get_download_url(access_token, id):
+    return f"https://gestion.integralcomunicaciones.com/my/invoices/{id}?access_token={access_token}"
 
 
 def account_movements_list_view(request, dni):
@@ -246,14 +232,21 @@ def account_movements_list_view(request, dni):
                 names.append(receipt_type)
 
         for account_movement in reversed(filtered_account_movements):
+            movement_id = account_movement.get("id")
             amount_total = account_movement.get("amount_total")
             receipt_type = account_movement.get("name")
+            access_token = account_movement.get("access_token")
 
             if receipt_type.startswith("RE") or receipt_type.startswith("NC"):
                 balance -= float(amount_total)
             else:
                 balance += float(amount_total)
             account_movement["balance"] = round(balance, 2)
+
+            if access_token:
+                account_movement["download_url"] = get_download_url(
+                    access_token, movement_id
+                )
 
         paginator = Paginator(filtered_account_movements, 20)
         page_number: str = request.GET.get("page")

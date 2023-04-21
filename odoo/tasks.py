@@ -2,7 +2,6 @@ import os.path
 import re
 from base64 import b64encode
 from datetime import datetime
-from typing import Any, Dict, List
 
 import odoolib
 import requests
@@ -132,7 +131,7 @@ def fetch_closed_ticket_ids(connection):
     return closed_ticket_ids_list
 
 
-def valid_change_speed_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
+def valid_change_speed_open(tickets):
     if tickets is not False:
         for ticket in tickets:
             if ticket["category_id"][0] == 45:
@@ -158,7 +157,7 @@ def valid_admin_open(ticket_list):
     return False
 
 
-def valid_service_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
+def valid_service_open(tickets):
     if tickets is not False:
         for ticket in tickets:
             if ticket["category_id"][0] == 34:
@@ -171,7 +170,7 @@ def valid_service_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     return False
 
 
-def valid_unsuscribe_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
+def valid_unsuscribe_open(tickets):
     if tickets is not False:
         for ticket in tickets:
             if ticket["category_id"][0] == 56:
@@ -184,7 +183,7 @@ def valid_unsuscribe_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
     return False
 
 
-def valid_change_adress_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
+def valid_change_adress_open(tickets):
     if tickets is not False:
         for ticket in tickets:
             if ticket["category_id"][0] == 36:
@@ -217,31 +216,7 @@ def fetch_account_movements(partner_id, connection):
             "access_token",
         ],
     )
-    if account_movements_list:
-        return account_movements_list
-    return False
-
-
-# def get_account_data_move(id, connection) -> List[Dict[str, Any]]:
-#     account_model = connection.get_model("account.move")
-#     account_data = account_model.search_read(
-#         [("id", "=", id), ("state", "=", "posted")],
-#         [
-#             "id",
-#             "ref",
-#             "partner_id",
-#             "date",
-#             "invoice_date_due",
-#             "amount_total",
-#             "amount_residual",
-#             "invoice_payment_state",
-#             "name",
-#             "access_token",
-#         ],
-#     )
-#     if account_data:
-#         return account_data
-#     return False
+    return account_movements_list
 
 
 def fetch_initial_balance(partner_id, connection):
@@ -260,89 +235,60 @@ def fetch_initial_balance(partner_id, connection):
             "credit",
         ],
     )[-1]
-    if initial_balance:
-        return initial_balance
-    return False
+    return initial_balance
 
 
-def save_claim(dni, id, category, phone_number, email, description, files):
+def save_claim(form_data):
     connection = get_connection()
-    now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
-    description = (
-        "Fecha: "
-        + now
-        + " <br> phone number: "
-        + phone_number
-        + " <br> email: "
-        + email
-        + " <br> descripcion: "
-        + description
-    )
     archive_model = connection.get_model("ir.attachment")
     ticket_model = connection.get_model("helpdesk.ticket")
-    client_data: Dict[str, Any] = fetch_client_data(dni)
+    now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
+    description = f'Fecha: {now}<br>Phone number: {form_data.get("phone_number")}<br>Email: {form_data.get("email")}<br>Descripción: {form_data.get("description")}'
+    id = form_data.get("partner_id")
+    files = form_data.get("files")
+
     ticket_model.create(
         {
-            "partner_id": client_data.get("id"),
-            "suscripcion_id": id,
+            "partner_id": id,
+            "suscripcion_id": form_data.get("contract_id"),
             "name": "Reclamo o solicitud web",
             "description": "-",
-            "category_id": category,
+            "category_id": form_data.get("category_id"),
             "create_uid": 27,
             "portal_description": description,
         }
     )
+
     if files:
-        if files.size < int(settings.MAX_UPLOAD_SIZE):
-            name, type_file = os.path.splitext(files)
-            name_file = "ticket_" + str(client_data.get("id"))
-            if type_file == ".pdf":
-                archive_model.create(
-                    {
-                        "name": name_file,
-                        "type": "binary",
-                        "datas": files,
-                        "res_name": id,
-                        "store_fname": id,
-                        "res_model": "helpdesk.ticket",
-                        "res_id": id,
-                        "mimetype": "application/x-pdf",
-                    }
-                )
-            elif type_file == ".png":
-                archive_model.create(
-                    {
-                        "name": name_file,
-                        "type": "binary",
-                        "datas": files,
-                        "res_name": id,
-                        "store_fname": id,
-                        "res_model": "helpdesk.ticket",
-                        "res_id": id,
-                        "mimetype": "application/x-pdf",
-                    }
-                )
-            elif type_file == ".jpeg":
-                archive_model.create(
-                    {
-                        "name": name_file,
-                        "type": "binary",
-                        "datas": files,
-                        "res_name": id,
-                        "store_fname": id,
-                        "res_model": "helpdesk.ticket",
-                        "res_id": id,
-                        "mimetype": "image/jpeg",
-                    }
-                )
+        file_name = f"ticket_{id}"
+        file_extension = os.path.splitext(files)[1]
+
+        archive_dict = {
+            "name": file_name,
+            "type": "binary",
+            "datas": files,
+            "res_name": id,
+            "store_fname": id,
+            "res_model": "helpdesk.ticket",
+            "res_id": id,
+        }
+
+        if file_extension == ".pdf":
+            archive_dict["mimetype"] = "application/x-pdf"
+        elif file_extension == ".png":
+            archive_dict["mimetype"] = "image/png"
+        elif file_extension == ".jpeg":
+            archive_dict["mimetype"] = "image/jpeg"
+
+        archive_model.create(archive_dict)
 
 
 def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
     connection = get_connection()
     ticket_model = connection.get_model("helpdesk.ticket")
     archive_model = connection.get_model("ir.attachment")
-    client_data: Dict[str, Any] = fetch_client_data(dni)
     now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
+    client_data = fetch_client_data(dni)
     if ticket_description != "False":
         description = (
             ticket_description
