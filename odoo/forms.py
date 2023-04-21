@@ -105,7 +105,6 @@ class BaseClaimForm(forms.Form):
     )
 
     email = forms.EmailField(
-        required=True,
         widget=forms.EmailInput(
             attrs={
                 "class": "form-control rounded-end",
@@ -118,13 +117,12 @@ class BaseClaimForm(forms.Form):
         max_length=100,
         widget=forms.Textarea(
             attrs={
-                "class": "form-control",
+                "class": "form-control rounded-end",
                 "placeholder": "Incluya información que pueda ayudarnos a identificar y resolver su reclamo...",
                 "rows": "auto",
             }
         ),
         label="Descripción",
-        required=False,
     )
 
     files = forms.FileField(

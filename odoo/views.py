@@ -1,15 +1,16 @@
 from datetime import datetime
 
 from django.contrib import messages
-from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 
-from odoo.forms import AddClaimInfoForm, BaseClaimForm, LoginForm, LoginRecoveryForm
+from odoo.forms import BaseClaimForm, LoginForm, LoginRecoveryForm
 from odoo.tasks import (
-    add_info_claim,
-    fetch_all_data,
+    fetch_account_movements,
+    fetch_client_data,
     fetch_contract_open_tickets,
+    fetch_contracts_list,
+    fetch_initial_balance,
     save_claim,
     valid_admin_open,
     valid_change_adress_open,
@@ -27,68 +28,65 @@ REASON_CHOICES = {
 }
 
 
-async def index_view(request, dni):
-    client = cache.get(f"{dni}")
-    context = {
-        "page": "Cliente",
-    }
-
-    if not client:
-        await fetch_all_data(dni)
-        client = cache.get(f"{dni}")
-        context["client"] = client
-
-    if client == "Not found":
+def index_view(request, dni):
+    client_data = fetch_client_data(dni)
+    if not client_data:
         messages.info(request, "No se encontró el cliente buscado.")
         return redirect("login")
 
-    contracts_list = cache.get(f"{dni}").get("contracts_list")
-    context["contracts_list"] = contracts_list
-
+    contracts_list = fetch_contracts_list(client_data.get("contract_ids"))
     if not contracts_list:
         messages.info(request, "El cliente no posee contratos.")
         return redirect("login")
 
+    context = {
+        "page": "Cliente",
+        "client": client_data,
+        "contracts_list": contracts_list,
+    }
     return render(request, "index.html", context)
 
 
 def login_view(request):
     form = LoginForm(request.POST or None)
-    context = {
-        "page": "Login",
-        "form": form,
-    }
 
     if request.method == "POST" and form.is_valid():
         dni = form.cleaned_data.get("dni")
         return redirect("index", dni)
 
+    context = {
+        "page": "Login",
+        "form": form,
+    }
     return render(request, "login.html", context)
 
 
 def login_recovery_view(request):
     form = LoginRecoveryForm(request.POST or None)
-    context = {
-        "page": "Recuperación",
-        "form": form,
-    }
 
     if request.method == "POST" and form.is_valid():
         dni = form.cleaned_data.get("dni")
         return redirect("index", dni)
 
+    context = {
+        "page": "Recuperación",
+        "form": form,
+    }
     return render(request, "recovery_form.html", context)
 
 
 def claim_create_view(request, dni, contract_id):
-    client_data = cache.get(f"{dni}")
+    client_data = fetch_client_data(dni)
+
     context = {
         "client": client_data,
         "reason_choices": REASON_CHOICES,
         "page": "Reclamo",
     }
+
     claim_type = request.GET.get("claim_type")
     open_tickets_list = fetch_contract_open_tickets(contract_id)
+    open_ticket = {"id": 561651, "portal_description": "sarasa"}
 
     # if open_tickets_list:
     # admin_open = valid_admin_open(open_tickets_list)
@@ -99,13 +97,17 @@ def claim_create_view(request, dni, contract_id):
 
     if claim_type:
         form = BaseClaimForm(
-            request.POST or None, request.FILES or None, claim_type=claim_type
+            request.POST or None,
+            request.FILES or None,
+            claim_type=claim_type,
+            has_open_ticket=True,
         )
 
         if open_tickets_list:
-            for open_ticket in open_tickets_list:
-                ticket_type_id = open_ticket.get("category_id")[0]
+            for ticket in open_tickets_list:
+                ticket_type_id = ticket.get("category_id")[0]
                 if claim_type == ticket_type_id:
+                    open_ticket = ticket
                     form = BaseClaimForm(
                         request.POST or None,
                         request.FILES or None,
@@ -115,14 +117,7 @@ def claim_create_view(request, dni, contract_id):
 
         context["form"] = form
         context["selected_reason"] = int(claim_type)
-
-    # formAddInfo = AddClaimInfoForm(
-    #     request.POST or None,
-    #     request.FILES or None,
-    #     initial={"reason": claim_type},
-    #     reason_type=claim_type,
-    #     id=contract_id,
-    # )
+        context["open_ticket"] = open_ticket
 
     # context["formAddInfo"] = formAddInfo
     # context["ticket_open"] = None
@@ -141,62 +136,31 @@ def claim_create_view(request, dni, contract_id):
     # if claim_type == "request_change_of_address" and change_adress_open != False:
     #     context["ticket_open"] = change_adress_open
 
-    contracts_list = client_data.get("contracts_list")
+    contracts_list = fetch_contracts_list(client_data.get("contract_ids"))
     for contract in contracts_list:
         if contract.get("id") == contract_id:
             context["contract"] = contract
 
-    if request.method == "POST" and form.is_valid():
-        form_data = form.cleaned_data.copy()
-        form_data["partner_id"] = client_data.get("id")
-        form_data["contract_id"] = contract_id
-        form_data["category_id"] = int(claim_type)
-        form_data["files"] = request.FILES.get("files")
+    if request.method == "POST":
+        if form.is_valid():
+            form_data = form.cleaned_data.copy()
+            form_data["partner_id"] = client_data.get("id")
+            form_data["contract_id"] = contract_id
+            form_data["category_id"] = int(claim_type)
+            form_data["files"] = request.FILES.get("files")
+            form_data["open_ticket_id"] = open_ticket.get("id")
 
-        # name = form.cleaned_data.get("name")
-        # phone_number = form.cleaned_data.get("phone_number")
-        # email = form.cleaned_data.get("email")
-        # description = form.cleaned_data.get("description")
-        # files = None
+            save_claim(form_data)
 
-        save_claim(form_data)
+            if claim_type == "34":
+                message = "El reclamo se registró de forma exitosa."
+            elif claim_type in ["36", "45", "56"]:
+                message = "La solicitud se registró de forma exitosa."
+            if claim_type == "41":
+                message = "La consulta se registró de forma exitosa."
 
-        if claim_type == 34:
-            message = "El reclamo se registró de forma exitosa."
-        elif claim_type in [36, 45, 56]:
-            message = "La solicitud se registró de forma exitosa."
-        if claim_type == 41:
-            message = "La consulta se registró de forma exitosa."
-
-        messages.success(request, message)
-        return redirect("index", dni)
-
-        # else:
-        #     if formAddInfo.is_valid():
-        #         dni = request.POST.get("dni")
-        #         id = request.POST.get("id")
-        #         id_ticket = request.POST.get("id_ticket")
-        #         ticket_description = request.POST.get("ticket_description")
-        #         description: str = formAddInfo.cleaned_data.get("description")
-        #         files = None
-        #         if request.FILES:
-        #             files = request.FILES["files"]
-        #         add_info_claim(
-        #             dni, id, id_ticket, ticket_description, description, files
-        #         )
-        #         messages.success(request, "El reclamo se registró de forma exitosa.")
-        #     else:
-        #         messages.error(
-        #             request,
-        #             "El reclamo no se registró hay error en los datos ingresados.",
-        #         )
-    # # form.instance.service = service
-    #         # form.save()
-    #         # Cuando se crea un nuevo reclamo, el servicio pasa a tener un reclamo activo.
-    #         # service.has_active_claim = True
-    #         # service.save()
-    #         #messages.success(request, "El reclamo se registró de forma exitosa.")
-    #         return redirect('index', dni)
+            messages.success(request, message)
+            return redirect("index", dni)
 
     return render(request, "claim_form.html", context)
 
@@ -206,61 +170,56 @@ def get_download_url(access_token, id):
 
 
 def account_movements_list_view(request, dni):
-    client_data = cache.get(f"{dni}")
+    client_data = fetch_client_data(dni)
     client_id = client_data.get("id")
+    initial_balance = fetch_initial_balance(client_id)
+    account_movements = fetch_account_movements(client_id)
 
-    if client_id:
-        initial_balance = cache.get(f"{dni}").get("initial_balance")
+    balance_credit = initial_balance.get("credit")
+    balance_debit = initial_balance.get("debit")
+    balance = 0.0
 
-        balance_credit = initial_balance.get("credit")
-        balance_debit = initial_balance.get("debit")
-        balance = 0.0
+    if balance_credit:
+        balance -= balance_credit
+    elif balance_debit:
+        balance += balance_debit
 
-        if balance_credit:
-            balance -= balance_credit
-        elif balance_debit:
-            balance += balance_debit
+    filtered_account_movements = []
+    names = []
 
-        account_movements = cache.get(f"{dni}").get("account_movements")
-        filtered_account_movements = []
-        names = []
+    for account_movement in account_movements:
+        receipt_type = account_movement.get("name")
+        if receipt_type not in names:
+            filtered_account_movements.append(account_movement)
+            names.append(receipt_type)
 
-        for account_movement in account_movements:
-            receipt_type = account_movement.get("name")
-            if receipt_type not in names:
-                filtered_account_movements.append(account_movement)
-                names.append(receipt_type)
+    for account_movement in reversed(filtered_account_movements):
+        movement_id = account_movement.get("id")
+        amount_total = account_movement.get("amount_total")
+        receipt_type = account_movement.get("name")
+        access_token = account_movement.get("access_token")
 
-        for account_movement in reversed(filtered_account_movements):
-            movement_id = account_movement.get("id")
-            amount_total = account_movement.get("amount_total")
-            receipt_type = account_movement.get("name")
-            access_token = account_movement.get("access_token")
+        if receipt_type.startswith("RE") or receipt_type.startswith("NC"):
+            balance -= float(amount_total)
+        else:
+            balance += float(amount_total)
+        account_movement["balance"] = round(balance, 2)
 
-            if receipt_type.startswith("RE") or receipt_type.startswith("NC"):
-                balance -= float(amount_total)
-            else:
-                balance += float(amount_total)
-            account_movement["balance"] = round(balance, 2)
+        if access_token:
+            account_movement["download_url"] = get_download_url(
+                access_token, movement_id
+            )
 
-            if access_token:
-                account_movement["download_url"] = get_download_url(
-                    access_token, movement_id
-                )
+    paginator = Paginator(filtered_account_movements, 20)
+    page_number: str = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
-        paginator = Paginator(filtered_account_movements, 20)
-        page_number: str = request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
-
-        context = {
-            "today": datetime.now().date(),
-            "page": "Movimientos",
-            "client": client_data,
-            "payment_url": f"http://link.integralcomunicaciones.com:4000/linkpago/{client_data.get('internal_code')}",
-            "page_obj": page_obj,
-            "initial_balance": initial_balance,
-        }
-        return render(request, "account_movements_list.html", context)
-    else:
-        messages.info(request, "No se encontró el cliente buscado.")
-        return redirect("index", dni)
+    context = {
+        "today": datetime.now().date(),
+        "page": "Movimientos",
+        "client": client_data,
+        "payment_url": f"http://link.integralcomunicaciones.com:4000/linkpago/{client_data.get('internal_code')}",
+        "page_obj": page_obj,
+        "initial_balance": initial_balance,
+    }
+    return render(request, "account_movements_list.html", context)

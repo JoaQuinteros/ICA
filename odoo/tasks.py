@@ -7,7 +7,6 @@ import odoolib
 import requests
 from decouple import config
 from django.conf import settings
-from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
 
@@ -30,43 +29,22 @@ def get_connection():
         raise ValidationError("No pudimos procesar tu pedido.")
 
 
-async def fetch_all_data(dni):
-    connection = get_connection()
-
-    client = fetch_client_data(dni, connection)
-    cache.set(f"{dni}", client)
-
-    if client == "Not found":
-        return
-
-    contracts_list = fetch_contracts_list(client.get("contract_ids"), connection)
-
-    if not contracts_list:
-        return
-
-    client["contracts_list"] = contracts_list
-    client["initial_balance"] = fetch_initial_balance(dni, connection)
-    client["account_movements"] = fetch_account_movements(dni, connection)
-    cache.set(f"{dni}", client)
-
-
 # region asd
 
 
-def fetch_client_data(dni, connection):
+def fetch_client_data(dni):
+    connection = get_connection()
     client_model = connection.get_model("res.partner")
     client_data = client_model.search_read(
         [("vat", "=", dni)],
         ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
     )[0]
 
-    if client_data:
-        return client_data
-
-    return "Not found"
+    return client_data
 
 
-def fetch_contracts_list(contract_ids, connection):
+def fetch_contracts_list(contract_ids):
+    connection = get_connection()
     contract_model = connection.get_model("contract.contract")
     contracts_list = []
 
@@ -199,10 +177,11 @@ def valid_change_adress_open(tickets):
 # endregion
 
 
-def fetch_account_movements(partner_id, connection):
+def fetch_account_movements(client_id):
+    connection = get_connection()
     account_model = connection.get_model("account.move")
     account_movements_list = account_model.search_read(
-        [("partner_id", "=", partner_id), ("state", "=", "posted")],
+        [("partner_id", "=", client_id), ("state", "=", "posted")],
         [
             "id",
             "ref",
@@ -219,11 +198,12 @@ def fetch_account_movements(partner_id, connection):
     return account_movements_list
 
 
-def fetch_initial_balance(partner_id, connection):
+def fetch_initial_balance(client_id):
+    connection = get_connection()
     account_movement_model = connection.get_model("account.move.line")
     initial_balance = account_movement_model.search_read(
         [
-            ("partner_id", "=", partner_id),
+            ("partner_id", "=", client_id),
             ("account_id", "=", 6),
             ("parent_state", "=", "posted"),
         ],
@@ -240,37 +220,52 @@ def fetch_initial_balance(partner_id, connection):
 
 def save_claim(form_data):
     connection = get_connection()
-    archive_model = connection.get_model("ir.attachment")
     ticket_model = connection.get_model("helpdesk.ticket")
+    archive_model = connection.get_model("ir.attachment")
     now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
-    description = f'Fecha: {now}<br>Phone number: {form_data.get("phone_number")}<br>Email: {form_data.get("email")}<br>Descripción: {form_data.get("description")}'
-    id = form_data.get("partner_id")
-    files = form_data.get("files")
 
-    ticket_model.create(
-        {
-            "partner_id": id,
-            "suscripcion_id": form_data.get("contract_id"),
-            "name": "Reclamo o solicitud web",
-            "description": "-",
-            "category_id": form_data.get("category_id"),
-            "create_uid": 27,
-            "portal_description": description,
-        }
-    )
+    name = form_data.get("name")
+    phone_number = form_data.get("phone_number")
+    email = form_data.get("email")
+    form_description = form_data.get("description")
+    client_id = form_data.get("partner_id")
+    files = form_data.get("files")
+    contract_id = form_data.get("contract_id")
+    category_id = form_data.get("category_id")
+    open_ticket_id = form_data.get("open_ticket_id")
+    open_ticket_description = form_data.get("portal_description")
+
+    description = f"Fecha: {now} <br>Phone number: {phone_number} <br>Email: {email} <br>Descripción: {form_description}"
+
+    if not open_ticket_id:
+        ticket_model.create(
+            {
+                "partner_id": client_id,
+                "suscripcion_id": contract_id,
+                "name": "Reclamo o solicitud web",
+                "description": "-",
+                "category_id": category_id,
+                "create_uid": 27,
+                "portal_description": description,
+            }
+        )
+    else:
+        if open_ticket_description:
+            description = f"{open_ticket_description} <br>Fecha: {now} <br>Descripción: {form_description}"
+        ticket_model.write(open_ticket_id, {"portal_description": description})
 
     if files:
-        file_name = f"ticket_{id}"
+        file_name = f"ticket_{client_id}"
         file_extension = os.path.splitext(files)[1]
 
         archive_dict = {
-            "name": file_name,
+            "name": f"{file_name}{file_extension}",  # Nombre del archivo con extensión?
             "type": "binary",
-            "datas": files,
-            "res_name": id,
-            "store_fname": id,
+            "datas": b64encode(files.read()).decode("utf-8"),  # Archivo codificado?
+            "res_name": name,  # Nombre del cliente?
+            "store_fname": client_id,  # ??
             "res_model": "helpdesk.ticket",
-            "res_id": id,
+            "res_id": client_id,  # ID del cliente?
         }
 
         if file_extension == ".pdf":
@@ -289,7 +284,7 @@ def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
     archive_model = connection.get_model("ir.attachment")
     now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
     client_data = fetch_client_data(dni)
-    if ticket_description != "False":
+    if ticket_description:
         description = (
             ticket_description
             + "<br> Fecha: "
