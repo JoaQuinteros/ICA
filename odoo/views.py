@@ -51,7 +51,7 @@ def login_view(request):
         return redirect("index", dni)
 
     context = {
-        "page": "Login",
+        "page": "Consulta",
         "form": form,
     }
     return render(request, "login.html", context)
@@ -76,9 +76,9 @@ def claim_create_view(request, dni, contract_id):
     open_ticket = None
 
     context = {
+        "page": "Reclamo",
         "client": client_data,
         "reason_choices": REASON_CHOICES,
-        "page": "Reclamo",
     }
 
     claim_type = request.GET.get("claim_type")
