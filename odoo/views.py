@@ -11,12 +11,8 @@ from odoo.tasks import (
     fetch_contract_open_tickets,
     fetch_contracts_list,
     fetch_initial_balance,
+    format_ticket_description,
     save_claim,
-    valid_admin_open,
-    valid_change_adress_open,
-    valid_change_speed_open,
-    valid_service_open,
-    valid_unsuscribe_open,
 )
 
 REASON_CHOICES = {
@@ -77,6 +73,7 @@ def login_recovery_view(request):
 
 def claim_create_view(request, dni, contract_id):
     client_data = fetch_client_data(dni)
+    open_ticket = None
 
     context = {
         "client": client_data,
@@ -86,28 +83,25 @@ def claim_create_view(request, dni, contract_id):
 
     claim_type = request.GET.get("claim_type")
     open_tickets_list = fetch_contract_open_tickets(contract_id)
-    open_ticket = {"id": 561651, "portal_description": "sarasa"}
-
-    # if open_tickets_list:
-    # admin_open = valid_admin_open(open_tickets_list)
-    # service_open = valid_service_open(tickets_open)
-    # change_plan_open = valid_change_speed_open(tickets_open)
-    # unsuscribe_plan_open = valid_unsuscribe_open(tickets_open)
-    # change_adress_open = valid_change_adress_open(tickets_open)
+    # open_ticket = {
+    #     "id": 561651,
+    #     "portal_description": '<p class="fw-bold">sarasa</p>',
+    #     "category_id": "45",
+    # }
+    # open_tickets_list.append(open_ticket)
 
     if claim_type:
         form = BaseClaimForm(
             request.POST or None,
             request.FILES or None,
             claim_type=claim_type,
-            has_open_ticket=True,
         )
 
         if open_tickets_list:
             for ticket in open_tickets_list:
-                ticket_type_id = ticket.get("category_id")[0]
+                ticket_type_id = ticket.get("category_id")
                 if claim_type == ticket_type_id:
-                    open_ticket = ticket
+                    open_ticket = format_ticket_description(ticket)
                     form = BaseClaimForm(
                         request.POST or None,
                         request.FILES or None,
@@ -115,26 +109,9 @@ def claim_create_view(request, dni, contract_id):
                         has_open_ticket=True,
                     )
 
+        context["open_ticket"] = open_ticket
         context["form"] = form
         context["selected_reason"] = int(claim_type)
-        context["open_ticket"] = open_ticket
-
-    # context["formAddInfo"] = formAddInfo
-    # context["ticket_open"] = None
-    # if claim_type == "technical" and service_open != False:
-    #     context["ticket_open"] = service_open
-
-    # if claim_type == "admin" and admin_open != False:
-    #     context["ticket_open"] = admin_open
-
-    # if claim_type == "change_plan" and change_plan_open != False:
-    #     context["ticket_open"] = change_plan_open
-
-    # if claim_type == "request_unsubscribe" and unsuscribe_plan_open != False:
-    #     context["ticket_open"] = unsuscribe_plan_open
-
-    # if claim_type == "request_change_of_address" and change_adress_open != False:
-    #     context["ticket_open"] = change_adress_open
 
     contracts_list = fetch_contracts_list(client_data.get("contract_ids"))
     for contract in contracts_list:
@@ -148,7 +125,8 @@ def claim_create_view(request, dni, contract_id):
             form_data["contract_id"] = contract_id
             form_data["category_id"] = int(claim_type)
             form_data["files"] = request.FILES.get("files")
-            form_data["open_ticket_id"] = open_ticket.get("id")
+            if open_ticket:
+                form_data["open_ticket_id"] = open_ticket.get("id")
 
             save_claim(form_data)
 
@@ -186,12 +164,18 @@ def account_movements_list_view(request, dni):
 
     filtered_account_movements = []
     names = []
-
     for account_movement in account_movements:
         receipt_type = account_movement.get("name")
         if receipt_type not in names:
             filtered_account_movements.append(account_movement)
             names.append(receipt_type)
+        # elif receipt_type in names:
+        #     repeated_receipts_total = 0
+        #     if receipt_type.startswith("RE") or receipt_type.startswith("NC"):
+        #         repeated_receipts_total -= account_movement.get("amount_total")
+        #     else:
+        #         repeated_receipts_total += account_movement.get("amount_total")
+        #     print(repeated_receipts_total)
 
     for account_movement in reversed(filtered_account_movements):
         movement_id = account_movement.get("id")

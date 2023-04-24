@@ -139,52 +139,9 @@ class BaseClaimForm(forms.Form):
         label="Adjuntar archivo (.pdf, .jpeg o .png)",
         validators=[
             FileExtensionValidator(
-                allowed_extensions=["mp3", "avi", "wav"],
-                message="El archivo seleccionado no tiene un formato de sonido válido.",
+                allowed_extensions=["pdf", "jpeg", "png"],
+                message="El archivo seleccionado no tiene un formato válido.",
             ),
             validate_file_size,
         ],
     )
-
-
-class AddClaimInfoForm(forms.Form):
-    def __init__(self, *args, reason_type, id, **kwargs):
-        super().__init__(*args, **kwargs)
-        if reason_type in [
-            "request_change_of_address",
-            "change_plan",
-            "request_unsubscribe",
-        ]:
-            del self.fields["files"]
-
-    description = forms.CharField(
-        max_length=100,
-        widget=forms.Textarea(
-            attrs={"class": "form-control", "placeholder": "Descripción del reclamo..."}
-        ),
-        label="Descripción",
-    )
-
-    files = forms.FileField(
-        required=False,
-        label="Adjuntar archivo (deben ser .pdf, .jpeg, .png)",
-        widget=forms.ClearableFileInput(
-            attrs={
-                "class": "form-control",
-                "accept": "application/pdf, image/jpeg ,image/png",
-            }
-        ),
-    )
-
-    def clean(self):
-        super().clean()
-
-        files = self.cleaned_data.get("files")
-        if files and files.size > int(settings.MAX_UPLOAD_SIZE):
-            raise ValidationError(
-                {
-                    "files": ValidationError(
-                        "El tamaño del archivo no puede superar los 5MB."
-                    ),
-                }
-            )

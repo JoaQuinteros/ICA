@@ -6,7 +6,6 @@ from datetime import datetime
 import odoolib
 import requests
 from decouple import config
-from django.conf import settings
 from django.core.exceptions import ValidationError
 
 
@@ -27,9 +26,6 @@ def get_connection():
         odoolib.main.JsonRPCException,
     ):
         raise ValidationError("No pudimos procesar tu pedido.")
-
-
-# region asd
 
 
 def fetch_client_data(dni):
@@ -109,72 +105,27 @@ def fetch_closed_ticket_ids(connection):
     return closed_ticket_ids_list
 
 
-def valid_change_speed_open(tickets):
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket["category_id"][0] == 45:
-                cleanr = re.compile("<.*?>")
-                if ticket["portal_description"] is not False:
-                    ticket["portal_description"] = re.sub(
-                        cleanr, "", ticket["portal_description"]
-                    )
-                return ticket
+# def valid_change_speed_open(tickets):
+#     if tickets is not False:
+#         for ticket in tickets:
+#             if ticket["category_id"][0] == 45:
+#                 cleanr = re.compile("<.*?>")
+#                 if ticket["portal_description"] is not False:
+#                     ticket["portal_description"] = re.sub(
+#                         cleanr, "", ticket["portal_description"]
+#                     )
+#                 return ticket
 
-    return False
-
-
-def valid_admin_open(ticket_list):
-    for ticket in ticket_list:
-        if ticket.get("category_id")[0] == 41:
-            cleanr = re.compile("<.*?>")
-            if ticket.get("portal_description"):
-                ticket["portal_description"] = re.sub(
-                    cleanr, "", ticket["portal_description"]
-                )
-            return ticket
-    return False
+#     return False
 
 
-def valid_service_open(tickets):
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket["category_id"][0] == 34:
-                cleanr = re.compile("<.*?>")
-                if ticket["portal_description"] is not False:
-                    ticket["portal_description"] = re.sub(
-                        cleanr, "", ticket["portal_description"]
-                    )
-                return ticket
-    return False
-
-
-def valid_unsuscribe_open(tickets):
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket["category_id"][0] == 56:
-                cleanr = re.compile("<.*?>")
-                if ticket["portal_description"] is not False:
-                    ticket["portal_description"] = re.sub(
-                        cleanr, "", ticket["portal_description"]
-                    )
-                return ticket
-    return False
-
-
-def valid_change_adress_open(tickets):
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket["category_id"][0] == 36:
-                cleanr = re.compile("<.*?>")
-                if ticket["portal_description"] is not False:
-                    ticket["portal_description"] = re.sub(
-                        cleanr, "", ticket["portal_description"]
-                    )
-                return ticket
-    return False
-
-
-# endregion
+def format_ticket_description(ticket):
+    unformatted_string = re.compile("<.*?>")
+    if ticket.get("portal_description"):
+        ticket["portal_description"] = re.sub(
+            unformatted_string, "", ticket["portal_description"]
+        )
+        return ticket
 
 
 def fetch_account_movements(client_id):
@@ -224,7 +175,6 @@ def save_claim(form_data):
     archive_model = connection.get_model("ir.attachment")
     now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
 
-    name = form_data.get("name")
     phone_number = form_data.get("phone_number")
     email = form_data.get("email")
     form_description = form_data.get("description")
@@ -259,81 +209,20 @@ def save_claim(form_data):
         file_extension = os.path.splitext(files)[1]
 
         archive_dict = {
-            "name": f"{file_name}{file_extension}",  # Nombre del archivo con extensión?
+            "name": f"{file_name}{file_extension}",
             "type": "binary",
-            "datas": b64encode(files.read()).decode("utf-8"),  # Archivo codificado?
-            "res_name": name,  # Nombre del cliente?
-            "store_fname": client_id,  # ??
+            "datas": b64encode(files.read()).decode("utf-8"),
+            "res_name": contract_id,
+            "store_fname": contract_id,
             "res_model": "helpdesk.ticket",
-            "res_id": client_id,  # ID del cliente?
+            "res_id": contract_id,  # Relación con el Ticket
         }
 
         if file_extension == ".pdf":
-            archive_dict["mimetype"] = "application/x-pdf"
+            archive_dict["mimetype"] = "application/pdf"
         elif file_extension == ".png":
             archive_dict["mimetype"] = "image/png"
         elif file_extension == ".jpeg":
             archive_dict["mimetype"] = "image/jpeg"
 
         archive_model.create(archive_dict)
-
-
-def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
-    connection = get_connection()
-    ticket_model = connection.get_model("helpdesk.ticket")
-    archive_model = connection.get_model("ir.attachment")
-    now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
-    client_data = fetch_client_data(dni)
-    if ticket_description:
-        description = (
-            ticket_description
-            + "<br> Fecha: "
-            + now
-            + " <br> descripcion: "
-            + description
-        )
-    else:
-        description = "Fecha: " + now + " <br> descripcion: " + description
-    id_ticket_int = int(id_ticket)
-    ticket_model.write(id_ticket_int, {"portal_description": description})
-    if files:
-        if files.size < int(settings.MAX_UPLOAD_SIZE):
-            name, type_file = os.path.splitext(files.name)
-            name_file = "ticket_" + str(id_ticket)
-            res_name = str(id_ticket) + " - " + str(client_data.get("name"))
-            if type_file == ".pdf":
-                archive_model.create(
-                    {
-                        "name": name_file,
-                        "type": "binary",
-                        "datas": b64encode(files.read()).decode("utf-8"),
-                        "res_name": name_file + ".pdf",
-                        "res_model": "helpdesk.ticket",
-                        "res_id": id_ticket,
-                        "mimetype": "application/x-pdf",
-                    }
-                )
-            elif type_file == ".png":
-                archive_model.create(
-                    {
-                        "name": name_file,
-                        "type": "binary",
-                        "datas": b64encode(files.read()).decode("utf-8"),
-                        "res_name": name_file + ".png",
-                        "res_model": "helpdesk.ticket",
-                        "res_id": id_ticket,
-                        "mimetype": "image/png",
-                    }
-                )
-            elif type_file == ".jpeg":
-                archive_model.create(
-                    {
-                        "name": name_file,
-                        "type": "binary",
-                        "datas": b64encode(files.read()).decode("utf-8"),
-                        "res_name": name_file + ".jpeg",
-                        "res_model": "helpdesk.ticket",
-                        "res_id": id_ticket,
-                        "mimetype": "image/jpeg",
-                    }
-                )
