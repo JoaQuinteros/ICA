@@ -97,6 +97,12 @@
                 {{ form.files.errors|first }}
             </div>
 
+            {{ form.files_second.label_tag }}
+            {% render_field form.files_second %}
+            <div class="invalid-feedback">
+                {{ form.files_second.errors|first }}
+            </div>
+
 
             <input value="Enviar" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
        <!--   <button type="submit" class="btn btn-outline-primary m-3" id="myBtn" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal">
@@ -194,6 +200,12 @@
         {% render_field formAddInfo.files %}
         <div class="invalid-feedback">
             {{ formAddInfo.files.errors|first }}
+        </div>
+
+        {{ formAddInfo.files_second.label_tag }}
+        {% render_field formAddInfo.files_second %}
+        <div class="invalid-feedback">
+            {{ formAddInfo.files_second.errors|first }}
         </div>
 
         <input value="Enviar" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimInfoFormConfirmationModal">

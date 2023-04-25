@@ -62,10 +62,13 @@ class BaseClaimForm(forms.Form):
         super().__init__(*args, **kwargs)
         if reason_type == "request_change_of_address":
             self.fields.pop("files", '')
+            self.fields.pop("files_second", '')
         elif reason_type == "change_plan":
             self.fields.pop("files", '')
+            self.fields.pop("files_second", '')
         elif reason_type == "request_unsubscribe":
             self.fields.pop("files", '')
+            self.fields.pop("files_second", '')
 
 
     name = forms.CharField(
@@ -109,6 +112,16 @@ class BaseClaimForm(forms.Form):
     )
     
     files = forms.FileField(
+        required = False, 
+        label = "Adjuntar archivo (deben ser .pdf, .jpeg, .png)", 
+        widget = forms.ClearableFileInput(
+            attrs = {
+                'class': 'form-control','accept':'application/pdf, image/jpeg ,image/png',
+            }
+        ),
+    )
+
+    files_second = forms.FileField(
         required = False, 
         label = "Adjuntar archivo (deben ser .pdf, .jpeg, .png)", 
         widget = forms.ClearableFileInput(
@@ -163,16 +176,30 @@ class BaseClaimForm(forms.Form):
             )
         
                 #allow_empty_file = True,
+        
+
+        files_second = self.cleaned_data.get("files_second")
+        if files_second != None and files_second.size > int(settings.MAX_UPLOAD_SIZE):
+            raise ValidationError(
+                {
+                    "files_second": ValidationError(
+                        "El tamaño del archivo no puede superar los 5MB"
+                    ),
+                }
+            )
 
 class AddInfoCalimForm(forms.Form):
     def __init__(self, *args, reason_type, id,**kwargs) -> None:
         super().__init__(*args, **kwargs)
         if reason_type == "request_change_of_address":
             self.fields.pop("files", '')
+            self.fields.pop("files_second", '')
         elif reason_type == "change_plan":
             self.fields.pop("files", '')
+            self.fields.pop("files_second", '')
         elif reason_type == "request_unsubscribe":
             self.fields.pop("files", '')
+            self.fields.pop("files_second", '')
    
     description = forms.CharField(
         max_length = 100,
@@ -195,6 +222,16 @@ class AddInfoCalimForm(forms.Form):
         ),
     )
 
+    files_second = forms.FileField(
+        required = False, 
+        label = "Adjuntar archivo (deben ser .pdf, .jpeg, .png)", 
+        widget = forms.ClearableFileInput(
+            attrs = {
+                'class': 'form-control','accept':'application/pdf, image/jpeg ,image/png',
+            }
+        ),
+    )
+
     def clean(self) -> None:
         super().clean()
         
@@ -203,6 +240,16 @@ class AddInfoCalimForm(forms.Form):
             raise ValidationError(
                 {
                     "files": ValidationError(
+                        "El tamaño del archivo no puede superar los 5MB"
+                    ),
+                }
+            )
+        
+        files_second = self.cleaned_data.get("files_second")
+        if files_second != None and files_second.size > int(settings.MAX_UPLOAD_SIZE):
+            raise ValidationError(
+                {
+                    "files_second": ValidationError(
                         "El tamaño del archivo no puede superar los 5MB"
                     ),
                 }

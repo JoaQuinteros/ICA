@@ -200,7 +200,7 @@ def get_account_line_data(partner_id: str) -> List[Dict[str, Any]]:
         return account_line_list
     return False
 
-def save_claim(dni, id, category, phone_number, email, description, files):
+def save_claim(dni, id, category, phone_number, email, description, files, files_second):
     connection = get_connection()
     now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
     description = 'Fecha: ' + now + ' <br> phone number: ' + phone_number + ' <br> email: ' + email + ' <br> descripcion: ' + description
@@ -208,19 +208,35 @@ def save_claim(dni, id, category, phone_number, email, description, files):
     ticket_model = connection.get_model('helpdesk.ticket')
     client_data: Dict[str, Any] = get_client_data(dni)
     ticket_model.create({'partner_id':client_data.get('id'),'suscripcion_id':id,'name':'Reclamo o solicitud web','description':'-','category_id':category,'create_uid':27,'portal_description':description})
+    print(files)
+    print(files_second)
     if files:
         if files.size < int(settings.MAX_UPLOAD_SIZE):
             name, type_file = os.path.splitext(files)
             name_file = 'ticket_' + str(client_data.get('id'))
+            files_byte = files.read()
+            files_json = b64encode(files_byte).decode('utf-8')
             if type_file is '.pdf':
-                archive_model.create({'name':name_file,'type':'binary','datas':files,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/x-pdf'})
+                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name':id + '.pdf','store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/pdf'})
             elif type_file is '.png':
-                archive_model.create({'name':name_file,'type':'binary','datas':files,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/x-pdf'})
+                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name':id + '.png','store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/png'})
             elif type_file is '.jpeg':
-                archive_model.create({'name':name_file,'type':'binary','datas':files,'res_name':id,'store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/jpeg'})
+                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name':id + '.jpeg','store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/jpeg'})
+    if files_second:
+        if files_second.size < int(settings.MAX_UPLOAD_SIZE):
+            name, type_file_second = os.path.splitext(files.name)
+            name_file_second = 'ticket_' + str(client_data.get('id'))
+            files_second_byte = files_second.read()
+            files_second_json = b64encode(files_second_byte).decode('utf-8')
+            if type_file_second == '.pdf':
+                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': id + '.pdf','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/pdf'})
+            elif type_file_second == '.png':
+                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': id + '.png','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/png'})
+            elif type_file_second == '.jpeg':
+                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': id + '.jpeg','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/jpeg'})
 
 
-def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
+def add_info_claim(dni, id, id_ticket, ticket_description, description, files, files_second):
     connection = get_connection()
     ticket_model = connection.get_model('helpdesk.ticket')
     archive_model = connection.get_model('ir.attachment')
@@ -232,14 +248,31 @@ def add_info_claim(dni, id, id_ticket, ticket_description, description, files):
         description = 'Fecha: ' + now + ' <br> descripcion: ' + description
     id_ticket_int = int(id_ticket)
     ticket_model.write(id_ticket_int,{'portal_description':description})
+    print(files)
+    print(files_second)
     if files:
         if files.size < int(settings.MAX_UPLOAD_SIZE):
             name, type_file = os.path.splitext(files.name)
             name_file = 'ticket_' + str(id_ticket)
             res_name = str(id_ticket) + ' - ' + str(client_data.get('name'))
+            files_byte = files.read()
+            files_json = b64encode(files_byte).decode('utf-8')
             if type_file == '.pdf':
-                archive_model.create({'name':name_file,'type':'binary','datas':b64encode(files.read()).decode('utf-8'),'res_name':name_file +'.pdf','res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'application/x-pdf'})
+                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name': name_file + '.pdf','store_fname':name_file,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'application/pdf'})
             elif type_file == '.png':
-                archive_model.create({'name':name_file,'type':'binary','datas':b64encode(files.read()).decode('utf-8'),'res_name':name_file +'.png','res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/png'})
+                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name': name_file + '.png','store_fname':name_file,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/png'})
             elif type_file == '.jpeg':
-                archive_model.create({'name':name_file,'type':'binary','datas':b64encode(files.read()).decode('utf-8'),'res_name':name_file +'.jpeg','res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/jpeg'})
+                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name': name_file + '.jpeg','store_fname':name_file,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/jpeg'})
+    if files_second:
+        if files_second.size < int(settings.MAX_UPLOAD_SIZE):
+            name, type_file_second = os.path.splitext(files.name)
+            name_file_second = 'ticket_' + str(id_ticket)
+            res_name = str(id_ticket) + ' - ' + str(client_data.get('name'))
+            files_second_byte = files_second.read()
+            files_second_json = b64encode(files_second_byte).decode('utf-8')
+            if type_file_second == '.pdf':
+                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': name_file_second + '.pdf','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'application/pdf'})
+            elif type_file_second == '.png':
+                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': name_file_second + '.png','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/png'})
+            elif type_file_second == '.jpeg':
+                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': name_file_second + '.jpeg','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/jpeg'})

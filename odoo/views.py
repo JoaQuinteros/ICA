@@ -134,22 +134,26 @@ def claim_create_view(request: HttpRequest, dni: str, id: int) -> HttpResponse:
                 email: str = form.cleaned_data.get('email')
                 description: str = form.cleaned_data.get('description')
                 files = None
+                files_second = None
                 if request.FILES:
-                    files = request.FILES['files']
+                    if 'files'  in request.FILES:
+                        files = request.FILES['files']
+                    if 'files_second' in request.FILES:    
+                        files_second = request.FILES['files_second']
                 if claim_type == 'technical':
-                    save_claim(dni, id, 34, phone_number, email, description, files)
+                    save_claim(dni, id, 34, phone_number, email, description, files, files_second)
                     messages.success(request, "El reclamo se registró de forma exitosa.")
                 if claim_type == 'admin':
-                    save_claim(dni, id, 41, phone_number, email, description, files)
+                    save_claim(dni, id, 41, phone_number, email, description, files, files_second)
                     messages.success(request, "La consulta se registró de forma exitosa.")
                 if claim_type == 'change_plan':
-                    save_claim(dni, id, 45, phone_number, email, description, files)
+                    save_claim(dni, id, 45, phone_number, email, description, files, files_second)
                     messages.success(request, "La solicitud se registró de forma exitosa.")
                 if claim_type == 'request_unsubscribe':
-                    save_claim(dni, id, 56, phone_number, email, description, files)
+                    save_claim(dni, id, 56, phone_number, email, description, files, files_second)
                     messages.success(request, "La solicitud se registró de forma exitosa.")
                 if claim_type == 'request_change_of_address':
-                    save_claim(dni, id, 36, phone_number, email, description, files)
+                    save_claim(dni, id, 36, phone_number, email, description, files, files_second)
                     messages.success(request, "La solicitud se registró de forma exitosa.")
             else:
                 messages.error(request, "El reclamo o solicitud no se registró hay error en los datos ingresados.")
@@ -162,9 +166,13 @@ def claim_create_view(request: HttpRequest, dni: str, id: int) -> HttpResponse:
                 ticket_description = request.POST.get('ticket_description')
                 description: str = formAddInfo.cleaned_data.get('description')
                 files = None
+                files_second = None
                 if request.FILES:
-                    files = request.FILES['files']
-                add_info_claim(dni, id, id_ticket, ticket_description, description, files)
+                    if 'files' in request.FILES:
+                        files = request.FILES['files']
+                    if 'files_second' in request.FILES:    
+                        files_second = request.FILES['files_second']
+                add_info_claim(dni, id, id_ticket, ticket_description, description, files, files_second)
                 messages.success(request, "El reclamo se registró de forma exitosa.")
             else:
                 messages.error(request, "El reclamo no se registró hay error en los datos ingresados.")
