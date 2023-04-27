@@ -1,14 +1,13 @@
+import os.path
+import re
 from base64 import b64encode
-from typing import Any, Dict, List
+from datetime import datetime
 
 import odoolib
 import requests
 from decouple import config
 from django.core.exceptions import ValidationError
-import re
-from django.conf import settings
-import os.path
-from datetime import datetime
+
 
 def get_connection():
     try:
@@ -18,108 +17,122 @@ def get_connection():
             login=config("ODOO_DB_LOGIN"),
             password=config("ODOO_DB_PASSWORD"),
             port=443,
-            protocol="jsonrpcs"
+            protocol="jsonrpcs",
         )
         return connection
-    except (requests.exceptions.ConnectionError, odoolib.main.AuthenticationError, odoolib.main.JsonRPCException):
+    except (
+        requests.exceptions.ConnectionError,
+        odoolib.main.AuthenticationError,
+        odoolib.main.JsonRPCException,
+    ):
         raise ValidationError("No pudimos procesar tu pedido.")
-    
-    
-def get_client_data(dni: str) -> Dict[str, Any]:
+
+
+def fetch_client_data(dni):
     connection = get_connection()
-    client_model = connection.get_model('res.partner')
-    client_data: List[Dict[str, Any]] = client_model.search_read([('vat', '=', dni)], ['id','internal_code','name','email','vat','contract_ids','credit'])
-    if client_data:
-        return client_data[0]
-    return False
+    client_model = connection.get_model("res.partner")
+    client_data = client_model.search_read(
+        [("vat", "=", dni)],
+        ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
+    )[0]
+
+    return client_data
 
 
-def get_contract_data(id: str) -> Dict[str, Any]:
+def fetch_contracts_list(contract_ids):
     connection = get_connection()
-    contract_model = connection.get_model('contract.contract')
-    contract_data: List[Dict[str, Any]] = contract_model.search_read([('id', '=', id)], ['id','active','is_terminated','domicilio','localidad','latitud','longitud','ssid_id','sistema_autonomo_id','servicio_suspendido','ssid_state'])
-    if contract_data:
-        return contract_data[0]
-    return False
+    contract_model = connection.get_model("contract.contract")
+    contracts_list = []
 
-def get_client_tickets(id: str) -> Dict[str, Any]:
+    for id in contract_ids:
+        contract_data = contract_model.search_read(
+            [("id", "=", id)],
+            [
+                "id",
+                "active",
+                "is_terminated",
+                "domicilio",
+                "localidad",
+                "latitud",
+                "longitud",
+                "ssid_id",
+                "sistema_autonomo_id",
+                "servicio_suspendido",
+                "ssid_state",
+            ],
+        )[0]
+
+        if contract_data:
+            contracts_list.append(contract_data)
+
+    return contracts_list
+
+
+def fetch_contract_open_tickets(contract_id):
     connection = get_connection()
-    ticket_model = connection.get_model('helpdesk.ticket')
-    ticket_closed_model = connection.get_model('helpdesk.ticket.stage')
-    stages_closed = get_stages_closed()
-    contract_data: List[Dict[str, Any]] = ticket_model.search_read([('suscripcion_id', '=', id),('stage_id','!=', stages_closed),('create_uid','=', 27)], ['id','number','portal_description','stage_id','partner_id','stage_id','category_id','suscripcion_id'])
-    #
-    if contract_data:
-        print("Se encontro")
-        print(contract_data)
-        return contract_data
-    return False
+    closed_ticket_ids_list = fetch_closed_ticket_ids(connection)
 
-def get_stages_closed():
-    connection = get_connection()
-    stages_closed = []
-    ticket_closed_model = connection.get_model('helpdesk.ticket.stage')
-    stage_ticket = ticket_closed_model.search_read([('closed','=',True)]) # obtain the list of stages of tickets that belongs to tickets that are closed
-    for ts in stage_ticket:
-        stages_closed.append(ts.get('id'))
-    return stages_closed
+    ticket_model = connection.get_model("helpdesk.ticket")
+    open_tickets_list = ticket_model.search_read(
+        [
+            ("suscripcion_id", "=", contract_id),
+            ("stage_id", "!=", closed_ticket_ids_list),
+            ("create_uid", "=", 27),
+        ],
+        [
+            "id",
+            "number",
+            "portal_description",
+            "stage_id",
+            "partner_id",
+            "stage_id",
+            "category_id",
+            "suscripcion_id",
+        ],
+    )
 
-def valid_change_speed_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket['category_id'][0] == 45:
-                cleanr = re.compile('<.*?>')
-                if ticket['portal_description'] is not False:
-                    ticket['portal_description'] = re.sub(cleanr, '',ticket['portal_description'])
-                return ticket
-    return False
-
-def valid_admin_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket['category_id'][0] == 41:
-                cleanr = re.compile('<.*?>')
-                if ticket['portal_description'] is not False:
-                    ticket['portal_description'] = re.sub(cleanr, '',ticket['portal_description'])
-                return ticket
-    return False
-
-def valid_service_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket['category_id'][0] == 34:
-                cleanr = re.compile('<.*?>')
-                if ticket['portal_description'] is not False:
-                    ticket['portal_description'] = re.sub(cleanr, '',ticket['portal_description'])
-                return ticket
-    return False
-
-def valid_unsuscribe_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket['category_id'][0] == 56:
-                cleanr = re.compile('<.*?>')
-                if ticket['portal_description'] is not False:
-                    ticket['portal_description'] = re.sub(cleanr, '',ticket['portal_description'])
-                return ticket
-    return False
-
-def valid_change_adress_open(tickets: Dict[str, Any]) -> Dict[str, Any]:
-    if tickets is not False:
-        for ticket in tickets:
-            if ticket['category_id'][0] == 36:
-                cleanr = re.compile('<.*?>')
-                if ticket['portal_description'] is not False:
-                    ticket['portal_description'] = re.sub(cleanr, '',ticket['portal_description'])
-                return ticket
-    return False
+    return open_tickets_list
 
 
-def get_account_data(partner_id: str) -> List[Dict[str, Any]]:
+def fetch_closed_ticket_ids(connection):
+    closed_tickets_model = connection.get_model("helpdesk.ticket.stage")
+    closed_tickets_list = closed_tickets_model.search_read([("closed", "=", True)])
+
+    closed_ticket_ids_list = []
+    for closed_ticket in closed_tickets_list:
+        closed_ticket_ids_list.append(closed_ticket.get("id"))
+
+    return closed_ticket_ids_list
+
+
+# def valid_change_speed_open(tickets):
+#     if tickets is not False:
+#         for ticket in tickets:
+#             if ticket["category_id"][0] == 45:
+#                 cleanr = re.compile("<.*?>")
+#                 if ticket["portal_description"] is not False:
+#                     ticket["portal_description"] = re.sub(
+#                         cleanr, "", ticket["portal_description"]
+#                     )
+#                 return ticket
+
+#     return False
+
+
+def format_ticket_description(ticket):
+    unformatted_string = re.compile("<.*?>")
+    if ticket.get("portal_description"):
+        ticket["portal_description"] = re.sub(
+            unformatted_string, "", ticket["portal_description"]
+        )
+        return ticket
+
+
+def fetch_account_movements(client_id):
     connection = get_connection()
     account_model = connection.get_model("account.move")
-    account_data: List[Dict[str, Any]] = account_model.search_read(
-        [("partner_id", "=", partner_id),("state","=","posted")],
+    account_movements_list = account_model.search_read(
+        [("partner_id", "=", client_id), ("state", "=", "posted")],
         [
             "id",
             "ref",
@@ -133,146 +146,92 @@ def get_account_data(partner_id: str) -> List[Dict[str, Any]]:
             "access_token",
         ],
     )
-    if account_data:
-        return account_data
-    return False
+    return account_movements_list
 
-def get_account_data_move(id) -> List[Dict[str, Any]]:
+
+def fetch_initial_balance(client_id):
     connection = get_connection()
-    account_model = connection.get_model("account.move")
-    account_data: List[Dict[str, Any]] = account_model.search_read(
-        [("id", "=", id),("state","=","posted")],
+    account_movement_model = connection.get_model("account.move.line")
+    initial_balance = account_movement_model.search_read(
         [
-            "id",
-            "ref",
-            "partner_id",
-            "date",
-            "invoice_date_due",
-            "amount_total",
-            "amount_residual",
-            "invoice_payment_state",
-            "name",
-            "access_token",
+            ("partner_id", "=", client_id),
+            ("account_id", "=", 6),
+            ("parent_state", "=", "posted"),
         ],
-    )
-    if account_data:
-        return account_data
-    return False
-
-def get_account_line_data(partner_id: str) -> List[Dict[str, Any]]:
-    connection = get_connection()
-    account_line_model = connection.get_model("account.move.line")
-    account_line_list: List[Dict[str, Any]] = account_line_model.search_read(
-        [("partner_id", "=", partner_id),('account_id', '=' ,6),('parent_state', '=' ,"posted")],
         [
-            # "move_id",
-            #"move_name",
             "ref",
-            # "partner_id",
             "date",
-            # "date_maturity",
-            # "debit",
-            # "credit",
-             "move_id",
-             "debit",
-             "credit",
+            "move_id",
+            "debit",
+            "credit",
         ],
-    )#VALIDAR con tipo de move osea si es RE y NC no sino con el tipo
-    if account_line_list:
-        for account_move_line in account_line_list:
-            if account_move_line.get('move_id') is not False:
-                account_move = list(get_account_data_move(account_move_line.get('move_id')[0]))[0]
-                if account_move.get('invoice_date_due') is not False:
-                    date_due : datetime = datetime.strptime(account_move.get('invoice_date_due'), "%Y-%m-%d").date()
-                    account_move_line ['invoice_date_due'] = date_due
-                else:
-                    account_move_line ['invoice_date_due'] = account_move.get('invoice_date_due')
-                account_move_line ['name'] = account_move.get('name')
-                account_move_line ['date_move'] = account_move.get('date')
-                account_move_line ['invoice_payment_state'] = account_move.get('invoice_payment_state')
-                account_move_line ['access_token'] = account_move.get('access_token')
-            else:
-                account_move_line ['name'] = False
-                account_move_line ['date_move'] = False
-                account_move_line ['invoice_date_due'] = False
-                account_move_line ['invoice_payment_state'] = False
-                account_move_line ['access_token'] = False
-        return account_line_list
-    return False
+    )[-1]
+    return initial_balance
 
-def save_claim(dni, id, category, phone_number, email, description, files, files_second):
+def save_archive(file, open_ticket_id, contract_id):
+    file_name = f"ticket_{open_ticket_id}_contrato_{contract_id}"
+    file_extension = os.path.splitext(file.name)[1]
+    archive_dict = {
+        "name": f"{file_name}",
+        "type": "binary",
+        "datas": b64encode(file.read()).decode("utf-8"),
+        "res_name": f"{file_name}{file_extension}",
+        "store_fname": f"{file_name}",
+        "res_model": "helpdesk.ticket",
+        "res_id": open_ticket_id,  # Relación con el Ticket
+    }
+
+    if file_extension == ".pdf":
+        archive_dict["mimetype"] = "application/pdf"
+    elif file_extension == ".png":
+        archive_dict["mimetype"] = "image/png"
+    elif file_extension == ".jpeg":
+        archive_dict["mimetype"] = "image/jpeg"
+
     connection = get_connection()
-    now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
-    description = 'Fecha: ' + now + ' <br> phone number: ' + phone_number + ' <br> email: ' + email + ' <br> descripcion: ' + description
-    archive_model = connection.get_model('ir.attachment')
-    ticket_model = connection.get_model('helpdesk.ticket')
-    client_data: Dict[str, Any] = get_client_data(dni)
-    ticket_model.create({'partner_id':client_data.get('id'),'suscripcion_id':id,'name':'Reclamo o solicitud web','description':'-','category_id':category,'create_uid':27,'portal_description':description})
-    print(files)
-    print(files_second)
-    if files:
-        if files.size < int(settings.MAX_UPLOAD_SIZE):
-            name, type_file = os.path.splitext(files)
-            name_file = 'ticket_' + str(client_data.get('id'))
-            files_byte = files.read()
-            files_json = b64encode(files_byte).decode('utf-8')
-            if type_file is '.pdf':
-                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name':id + '.pdf','store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/pdf'})
-            elif type_file is '.png':
-                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name':id + '.png','store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/png'})
-            elif type_file is '.jpeg':
-                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name':id + '.jpeg','store_fname':id,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/jpeg'})
-    if files_second:
-        if files_second.size < int(settings.MAX_UPLOAD_SIZE):
-            name, type_file_second = os.path.splitext(files.name)
-            name_file_second = 'ticket_' + str(client_data.get('id'))
-            files_second_byte = files_second.read()
-            files_second_json = b64encode(files_second_byte).decode('utf-8')
-            if type_file_second == '.pdf':
-                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': id + '.pdf','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'application/pdf'})
-            elif type_file_second == '.png':
-                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': id + '.png','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/png'})
-            elif type_file_second == '.jpeg':
-                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': id + '.jpeg','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id,'mimetype':'image/jpeg'})
+    archive_model = connection.get_model("ir.attachment")
+    archive_model.create(archive_dict)
 
 
-def add_info_claim(dni, id, id_ticket, ticket_description, description, files, files_second):
+
+def save_claim(form_data, open_ticket):
     connection = get_connection()
-    ticket_model = connection.get_model('helpdesk.ticket')
-    archive_model = connection.get_model('ir.attachment')
-    client_data: Dict[str, Any] = get_client_data(dni)
+    ticket_model = connection.get_model("helpdesk.ticket")
     now = datetime.now().strftime("%m/%d/%Y  %H:%M:%S")
-    if ticket_description != 'False':
-        description = ticket_description + '<br> Fecha: ' + now + ' <br> descripcion: ' + description
+    name = form_data.get("name")
+    phone_number = form_data.get("phone_number")
+    email = form_data.get("email")
+    form_description = form_data.get("description")
+    client_id = form_data.get("partner_id")
+    files = form_data.get("files")
+    contract_id = form_data.get("contract_id")
+    category_id = form_data.get("category_id")
+    open_ticket_id = form_data.get("open_ticket_id")
+    open_ticket_description = False
+    if open_ticket: 
+        open_ticket_description = open_ticket["portal_description"]
+    description = f"Fecha: {now} <br>Nombre: {name} <br>Número de teléfono: {phone_number} <br>Email: {email} <br>Descripción: {form_description}"    
+    if not open_ticket_id:
+        ticket_model.create(
+            {
+                "partner_id": client_id,
+                "suscripcion_id": contract_id,
+                "name": "Reclamo o solicitud web",
+                "description": "-",
+                "category_id": category_id,
+                "create_uid": 27,
+                "portal_description": description,
+            }
+        )
     else:
-        description = 'Fecha: ' + now + ' <br> descripcion: ' + description
-    id_ticket_int = int(id_ticket)
-    ticket_model.write(id_ticket_int,{'portal_description':description})
-    print(files)
-    print(files_second)
+        if open_ticket_description:
+            description = f"{open_ticket_description} <br>Fecha: {now} <br>Descripción: {form_description}"
+        ticket_model.write(open_ticket_id, {"portal_description": description})
+
     if files:
-        if files.size < int(settings.MAX_UPLOAD_SIZE):
-            name, type_file = os.path.splitext(files.name)
-            name_file = 'ticket_' + str(id_ticket)
-            res_name = str(id_ticket) + ' - ' + str(client_data.get('name'))
-            files_byte = files.read()
-            files_json = b64encode(files_byte).decode('utf-8')
-            if type_file == '.pdf':
-                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name': name_file + '.pdf','store_fname':name_file,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'application/pdf'})
-            elif type_file == '.png':
-                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name': name_file + '.png','store_fname':name_file,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/png'})
-            elif type_file == '.jpeg':
-                archive_model.create({'name':name_file,'type':'binary','datas':files_json,'res_name': name_file + '.jpeg','store_fname':name_file,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/jpeg'})
-    if files_second:
-        if files_second.size < int(settings.MAX_UPLOAD_SIZE):
-            name, type_file_second = os.path.splitext(files.name)
-            name_file_second = 'ticket_' + str(id_ticket)
-            res_name = str(id_ticket) + ' - ' + str(client_data.get('name'))
-            files_second_byte = files_second.read()
-            files_second_json = b64encode(files_second_byte).decode('utf-8')
-            if type_file_second == '.pdf':
-                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': name_file_second + '.pdf','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'application/pdf'})
-            elif type_file_second == '.png':
-                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': name_file_second + '.png','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/png'})
-            elif type_file_second == '.jpeg':
-                archive_model.create({'name':name_file_second,'type':'binary','datas':files_second_json,'res_name': name_file_second + '.jpeg','store_fname':name_file_second,'res_model':'helpdesk.ticket','res_id':id_ticket,'mimetype':'image/jpeg'})
+        if 'files' in files:
+            file = files['files']
+            save_archive(file, open_ticket_id, contract_id)
+        if 'files_second' in files:
+            file = files['files_second']
+            save_archive(file, open_ticket_id, contract_id)

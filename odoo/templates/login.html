@@ -2,48 +2,45 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
     <head>
-
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        {% include 'bootstrap.html' %}
+        {% include "bootstrap.html" %}
 
-        <title>Cosmos | Ingreso</title>
+        <title>Integral comunicaciones SRL | {{ page }}</title>
 
         <link rel="stylesheet" href="{% static 'odoo/css/login.css' %}">
-
     </head>
 
     <body class="d-flex flex-column vh-100 py-0">
-
-        {% include 'messages.html' %}
+        {% include "messages.html" %}
 
         <div class="container-fluid my-auto text-center">
+            {% with WIDGET_ERROR_CLASS='is-invalid' %}
+                <form method="post" class="form-signin" novalidate>
+                    {% csrf_token %}
 
-        {% with WIDGET_ERROR_CLASS='is-invalid' %}
-            <form method="post" class="form-signin" novalidate>
-                {% csrf_token %}
+                    <img class="mb-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
 
-                <img class="mb-4 img-fluid"
-                src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
+                    <p class="h3 m-3 font-weight-normal">Consulta</p>
 
-                <p class="h3 m-3 font-weight-normal">Consulta</p>
+                    {% render_field form.dni %}
+                    <div class="invalid-feedback">
+                        {{ form.dni.errors|first }}
+                    </div>
 
-                {% render_field form.dni %}
-                <div class="invalid-feedback">
-                    {{ form.dni.errors|first }}
+                    <input type="submit" value="Buscar" class="btn btn-outline-primary m-3">
+                </form>
+
+                <div>
+                    <span>
+                        Si tiene problemas para <br> realizar su consulta haga click <a href="{% url 'login_recovery' %}">aquí</a>.
+                    </span>
                 </div>
-
-                <input type="submit" value="Buscar" class="btn btn-outline-primary m-3">
-            </form>
-        {% endwith %}
-
+            {% endwith %}
         </div>
-
-        {% include 'footer.html' %}
-
     </body>
-
+        
+    {% include "footer.html" %}
 </html>

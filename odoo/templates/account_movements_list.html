@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static extra_tags %}
+
+{% block breadcrumb %}
+
+    <li class="breadcrumb-item">
+        <a href="{% url 'index' client.vat %}" class="text-decoration-none" style="color: #E77817">
+            Cliente
+        </a>
+    </li>
+    <li class="breadcrumb-item active">Comprobantes</li>
+
+{% endblock breadcrumb %}
+
+{% block content %}
+
+    <div class="text-center">
+        <h1 class="my-4">{{ client.name }}</h1>
+        <div class="row align-items-center">
+            <div class="col-sm-2">
+                <div class="card text-center">
+                    <div class="card-header" style="background-color:#e9ecef">DNI / CUIT</div>
+                    <div class="card-body">{{ client.vat }}</div>
+                </div>
+            </div>
+            <div class="col-sm">
+                <div class="card text-center">
+                    <div class="card-header" style="background-color:#e9ecef">Email</div>
+                    <div class="card-body text-break">{{ client.email }}</div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="card text-center">
+                    <div class="card-header" style="background-color:#e9ecef">Deuda</div>
+                    <div class="card-body">${{ client.credit }}</div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                {% if client.credit %}
+                    <a class="btn btn-outline-primary" href="{{ payment_url }}">Pagar saldo</a>
+                {% else %}
+                    <a class="btn btn-outline-primary disabled" href="#">Pagar saldo</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table mt-4 align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Tipo y número</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Emisión</th>
+                    <th scope="col">Vencimiento</th>
+                    <th scope="col">Referencia</th>
+                    <th scope="col">A pagar</th>
+                    <th scope="col">Pagos</th>
+                    <th scope="col">Histórico</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for account_movement in page_obj %}
+                    <tr>
+                        <td>
+                            <span style="color: #E77817">{{ account_movement.name }}</span>
+                            {% if account_movement.download_url %}
+                                <a href="{{ account_movement.download_url }}" class="download" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Ver Factura" target="_blank">
+                                    <i class="ms-2 bi bi-eye"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if account_movement.invoice_payment_state == "paid" %}
+                                <span class="badge rounded-pill text-bg-success">
+                                    <i class="me-1 bi bi-check-circle"></i>
+                                    Pagado
+                                </span>
+                            {% elif account_movement.invoice_payment_state != "paid" and account_movement.invoice_date_due > today %}
+                                <span class="badge rounded-pill text-white text-bg-info">
+                                    <i class="me-1 bi bi-x-circle"></i>
+                                    No pagado
+                                </span>
+                            {% elif account_movement.invoice_payment_state != "paid" and today > account_movement.invoice_date_due %}
+                                <span class="badge rounded-pill text-bg-danger">
+                                    <i class="me-1 bi bi-x-circle"></i>
+                                    Vencido
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ account_movement.date|format_date }}</td>
+                        <td>
+                            {% if account_movement.invoice_date_due %}
+                                {{ account_movement.invoice_date_due|format_date }}
+                            {% endif %}
+                        </td>
+                        <td>{{ account_movement.ref|receipt_ref }}</td>
+                        {% if account_movement.name|receipt_type != "RE" and account_movement.name|receipt_type != "NC" %}
+                            <td>$ {{ account_movement.amount_total }}</td>
+                            <td> - </td>
+                        {% else %}
+                            <td> - </td>
+                            <td>$ {{ account_movement.amount_total }}</td>
+                        {% endif %}
+                        <td>$ {{ account_movement.balance }}</td>
+                    </tr>
+                {% endfor %}
+
+                {% if initial_balance and not page_obj.has_next %}
+                    <tr>
+                        <td style="color: #E77817" colspan="7">
+                            Saldo al {{ initial_balance.date|format_date }}
+                        </td>
+                        {% if initial_balance.credit %}
+                            <td>$ {{ initial_balance.credit }}</td>
+                        {% elif initial_balance.debit %}
+                            <td>$ {{ initial_balance.debit }}</td>
+                        {% endif %}
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.previous_page_number }}</a></li>
+        {% endif %}
+
+        <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.next_page_number }}</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
+        {% endif %}
+    </ul>
+
+    <script src="{% static 'odoo/js/tooltips.js' %}"></script>
+
+{% endblock content %}
