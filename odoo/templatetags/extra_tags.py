@@ -1,5 +1,5 @@
 from datetime import datetime
-
+import re
 from django import template
 
 register = template.Library()
@@ -33,3 +33,12 @@ def balance(value):
     balance = 0.0
     balance += float(value)
     return balance
+
+@register.filter
+def format_claim(value):
+    unformatted_string = re.compile("<.*?>")
+    description_clean = value.replace("<br>", "\n")
+    value_clean = re.sub(
+             unformatted_string, "", description_clean
+         )
+    return value_clean

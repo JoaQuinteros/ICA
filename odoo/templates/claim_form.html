@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static widget_tweaks %}
-
+{% load static extra_tags %}
 {% block breadcrumb %}
 
     <li class="breadcrumb-item">
@@ -102,7 +102,7 @@
 
         {% if open_ticket.portal_description %}
             <div class="d-flex mb-3 justify-content-between">
-                <h5 class="m-2 text-muted">Descripción: {{ open_ticket.portal_description}}</h5>
+                <h5 class="m-2 text-muted">{{ open_ticket.portal_description|format_claim|linebreaks }}</h5>
             </div>
         {% endif %}
     {% endif %}

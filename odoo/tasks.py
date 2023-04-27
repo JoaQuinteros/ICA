@@ -119,13 +119,14 @@ def fetch_closed_ticket_ids(connection):
 #     return False
 
 
-def format_ticket_description(ticket):
-    unformatted_string = re.compile("<.*?>")
-    if ticket.get("portal_description"):
-        ticket["portal_description"] = re.sub(
-            unformatted_string, "", ticket["portal_description"]
-        )
-        return ticket
+# def format_ticket_description(ticket):
+#     unformatted_string = re.compile("<.*?>")
+#     if ticket.get("portal_description"):
+#         description_clean = ticket["portal_description"].replace("<br>", "\n")
+#         ticket["portal_description"] = re.sub(
+#             unformatted_string, "", description_clean
+#         )
+#         return ticket
 
 
 def fetch_account_movements(client_id):
@@ -210,7 +211,7 @@ def save_claim(form_data, open_ticket):
     open_ticket_description = False
     if open_ticket: 
         open_ticket_description = open_ticket["portal_description"]
-    description = f"Fecha: {now} <br>Nombre: {name} <br>Número de teléfono: {phone_number} <br>Email: {email} <br>Descripción: {form_description}"    
+    description = f"Fecha: {now} <br> Nombre: {name} <br> Número de teléfono: {phone_number} <br> Email: {email} <br> Reclamo: {form_description} <br>"    
     if not open_ticket_id:
         ticket_model.create(
             {
@@ -225,7 +226,7 @@ def save_claim(form_data, open_ticket):
         )
     else:
         if open_ticket_description:
-            description = f"{open_ticket_description} <br>Fecha: {now} <br>Descripción: {form_description}"
+            description = f"{open_ticket_description} <br> Fecha: {now} <br> {form_description} <br>"
         ticket_model.write(open_ticket_id, {"portal_description": description})
 
     if files:

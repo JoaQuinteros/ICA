@@ -11,7 +11,7 @@ from odoo.tasks import (
     fetch_contract_open_tickets,
     fetch_contracts_list,
     fetch_initial_balance,
-    format_ticket_description,
+    #   format_ticket_description,
     save_claim,
 )
 
@@ -96,7 +96,7 @@ def claim_create_view(request, dni, contract_id):
             for ticket in open_tickets_list:
                 ticket_type_id = ticket.get("category_id")[0]
                 if int(claim_type) == int(ticket_type_id):
-                    open_ticket = format_ticket_description(ticket)
+                    open_ticket = ticket
                     form = BaseClaimForm(
                         request.POST or None,
                         request.FILES or None,
