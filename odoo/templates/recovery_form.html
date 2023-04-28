@@ -19,7 +19,7 @@
 
         <div class="container-fluid my-auto text-center">
             {% with WIDGET_ERROR_CLASS="is-invalid" %}
-                <form method="post" class="form-signin" novalidate>
+                <form method="POST" id="recovery_form" class="form-signin" novalidate>
                     {% csrf_token %}
 
                     <img class="mb-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
@@ -37,21 +37,55 @@
                     <div class="invalid-feedback">
                         {{ form.client_id.errors|first }}
                     </div>
+
+                    {% render_field form.name_recovery %}
+                    <div class="invalid-feedback">
+                        {{ form.name_recovery.errors|first }}
+                    </div>
+
+                    {% render_field form.phone_recovery %}
+                    <div class="invalid-feedback">
+                        {{ form.phone_recovery.errors|first }}
+                    </div>
+
+                    {% render_field form.email_recovery %}
+                    <div class="invalid-feedback">
+                        {{ form.email_recovery.errors|first }}
+                    </div>
                     
                     <div class="row gx-2 pt-2 justify-content-center">
+                        <div class="col-auto">
+                            <input value="Enviar" class="btn btn-outline-primary m-3"  data-bs-toggle="modal" data-bs-target="#recoveryModal">
+                        </div>
                         <div class="col-auto">
                             <a class="btn btn-outline-secondary" href="{% url 'login' %}">
                                 <i class="bi bi-arrow-return-left me-2"></i>Volver
                             </a>
-                        </div>
-                        <div class="col-auto">
-                            <input type="submit" value="Enviar" class="btn btn-outline-primary">
                         </div>
                     </div>
                 </form>
             {% endwith %}
         </div>
     </body>
+
+
+    <div class="modal fade" id="recoveryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Confirmación necesaria</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Desea ingresar un ticket de reclamo con la información ingresada?
+                </div>
+                <div class="modal-footer">
+                    <input type="button" value="Cancelar" class="btn btn-danger m-3" data-bs-dismiss="modal" >
+                    <input type="submit" value="Enviar" class="btn btn-outline-primary m-3" data-bs-dismiss="modal" form="recovery_form">
+                </div>
+            </div>
+        </div>
+    </div>
 
     {% include "footer.html" %}
 </html>

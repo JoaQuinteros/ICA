@@ -14,6 +14,7 @@ from odoo.tasks import (
     fetch_initial_balance,
     #   format_ticket_description,
     save_claim,
+    save_recovery,
 )
 
 REASON_CHOICES = {
@@ -60,16 +61,18 @@ def login_view(request):
 
 def login_recovery_view(request):
     form = LoginRecoveryForm(request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        dni = form.cleaned_data.get("dni")
-        return redirect("index", dni)
-
     context = {
         "page": "Recuperación",
         "form": form,
     }
-    return render(request, "recovery_form.html", context)
+    if request.method == "POST" and form.is_valid():
+        form_data = form.cleaned_data.copy()
+        save_recovery(form_data)
+        messages.success(request, "La solicitud se registró de forma exitosa.")
+        return render(request, "recovery_form.html", context)
+    else:
+        messages.error(request, "Los datos son erroneos.")
+        return render(request, "recovery_form.html", context)
 
 
 def claim_create_view(request, dni, contract_id):

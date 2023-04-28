@@ -236,3 +236,22 @@ def save_claim(form_data, open_ticket):
         if 'files_second' in files:
             file = files['files_second']
             save_archive(file, open_ticket_id, contract_id)
+
+def save_recovery(form_data):
+    connection = get_connection()
+    ticket_model = connection.get_model("helpdesk.ticket")
+    dni = form_data.get("dni_recovery")
+    contract = form_data.get("client_id")
+    name = form_data.get("name_recovery")
+    phone = form_data.get("phone_recovery")
+    email = form_data.get("email_recovery")
+    description = "<p> "+dni+" <br>"+contract+" <br>"+name+" <br>"+phone+" <br>"+email+" <br> </p>"
+    ticket_model.create(
+            {
+                "name": "Solicitud de actualizacion de DNI o CUIT",
+                "description": "-",
+                "category_id": 41,
+                "create_uid": 27,
+                "portal_description": description,
+            }
+        )
