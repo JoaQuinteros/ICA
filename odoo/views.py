@@ -3,6 +3,7 @@ from datetime import datetime
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from odoo.forms import BaseClaimForm, LoginForm, LoginRecoveryForm
 from odoo.tasks import (
@@ -116,7 +117,7 @@ def claim_create_view(request, dni, contract_id):
             context["contract"] = contract
 
     if request.method == "POST":
-        print(request)
+        print(request.GET.get("claim_type"))
         if form.is_valid():
             form_data = form.cleaned_data.copy()
             form_data["partner_id"] = client_data.get("id")
@@ -136,9 +137,10 @@ def claim_create_view(request, dni, contract_id):
                 message = "La consulta se registró de forma exitosa."
 
             messages.success(request, message)
-            return redirect("index", dni)
+            #return redirect("create_claim", dni=dni, contract_id=contract_id)
+            return redirect("/claim/"+str(dni)+"/"+str(contract_id)+"/?claim_type="+str(claim_type))
         else:
-            messages.error(request, "Se han ingresado mal los datos")
+            messages.error(request, "Los datos ingresados son incorrectos")
             return render(request, "claim_form.html", context)
 
     return render(request, "claim_form.html", context)
