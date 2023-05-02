@@ -65,14 +65,16 @@ def login_recovery_view(request):
         "page": "Recuperación",
         "form": form,
     }
-    if request.method == "POST" and form.is_valid():
-        form_data = form.cleaned_data.copy()
-        save_recovery(form_data)
-        messages.success(request, "La solicitud se registró de forma exitosa.")
-        return render(request, "recovery_form.html", context)
-    else:
-        messages.error(request, "Los datos son erroneos.")
-        return render(request, "recovery_form.html", context)
+    if request.method == "POST":
+        if form.is_valid():
+            form_data = form.cleaned_data.copy()
+            save_recovery(form_data)
+            messages.success(request, "La solicitud se registró de forma exitosa.")
+            return render(request, "recovery_form.html", context)
+        else:
+            messages.error(request, "Los datos son erroneos.")
+            return render(request, "recovery_form.html", context)
+    return render(request, "recovery_form.html", context)
 
 
 def claim_create_view(request, dni, contract_id):
