@@ -36,6 +36,11 @@ def fetch_client_data(dni):
         ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
     )[0]
 
+    email = client_data.get("email")
+    email_list_separator = email.find(";")
+    if email_list_separator:
+        client_data["email"] = email[:email_list_separator]
+
     return client_data
 
 
@@ -63,6 +68,13 @@ def fetch_contracts_list(contract_ids):
         )[0]
 
         if contract_data:
+            domicilio = contract_data.get("domicilio")
+            coords_parenthesis = domicilio.rfind("(")
+            if coords_parenthesis:
+                contract_data["domicilio"] = domicilio[:coords_parenthesis]
+            first_dash = domicilio.find("-")
+            if first_dash:
+                contract_data["domicilio"] = domicilio[:first_dash]
             contracts_list.append(contract_data)
 
     return contracts_list
@@ -105,28 +117,12 @@ def fetch_closed_ticket_ids(connection):
     return closed_ticket_ids_list
 
 
-# def valid_change_speed_open(tickets):
-#     if tickets is not False:
-#         for ticket in tickets:
-#             if ticket["category_id"][0] == 45:
-#                 cleanr = re.compile("<.*?>")
-#                 if ticket["portal_description"] is not False:
-#                     ticket["portal_description"] = re.sub(
-#                         cleanr, "", ticket["portal_description"]
-#                     )
-#                 return ticket
-
-#     return False
-
-
-# def format_ticket_description(ticket):
-#     unformatted_string = re.compile("<.*?>")
-#     if ticket.get("portal_description"):
-#         description_clean = ticket["portal_description"].replace("<br>", "\n")
-#         ticket["portal_description"] = re.sub(
-#             unformatted_string, "", description_clean
-#         )
-#         return ticket
+def format_ticket_description(ticket):
+    unformatted_string = re.compile("<.*?>")
+    if ticket.get("portal_description"):
+        description_clean = ticket["portal_description"].replace("<br>", "\n")
+        ticket["portal_description"] = re.sub(unformatted_string, "", description_clean)
+        return ticket
 
 
 def fetch_account_movements(client_id):
@@ -169,6 +165,7 @@ def fetch_initial_balance(client_id):
     )[-1]
     return initial_balance
 
+
 def save_archive(file, open_ticket_id, contract_id):
     file_name = f"ticket_{open_ticket_id}_contrato_{contract_id}"
     file_extension = os.path.splitext(file.name)[1]
@@ -194,7 +191,6 @@ def save_archive(file, open_ticket_id, contract_id):
     archive_model.create(archive_dict)
 
 
-
 def save_claim(form_data, open_ticket):
     connection = get_connection()
     ticket_model = connection.get_model("helpdesk.ticket")
@@ -209,9 +205,11 @@ def save_claim(form_data, open_ticket):
     category_id = form_data.get("category_id")
     open_ticket_id = form_data.get("open_ticket_id")
     open_ticket_description = False
-    if open_ticket: 
+
+    if open_ticket:
         open_ticket_description = open_ticket["portal_description"]
-    description = f"Fecha: {now} <br> Nombre: {name} <br> Número de teléfono: {phone_number} <br> Email: {email} <br> Reclamo: {form_description} <br>"    
+    description = f"Fecha: {now} <br> Nombre: {name} <br> Número de teléfono: {phone_number} <br> Email: {email} <br> Reclamo: {form_description} <br>"
+
     if not open_ticket_id:
         ticket_model.create(
             {
@@ -230,12 +228,13 @@ def save_claim(form_data, open_ticket):
         ticket_model.write(open_ticket_id, {"portal_description": description})
 
     if files:
-        if 'files' in files:
-            file = files['files']
+        if "files" in files:
+            file = files["files"]
             save_archive(file, open_ticket_id, contract_id)
-        if 'files_second' in files:
-            file = files['files_second']
+        if "files_second" in files:
+            file = files["files_second"]
             save_archive(file, open_ticket_id, contract_id)
+
 
 def save_recovery(form_data):
     connection = get_connection()
@@ -248,11 +247,11 @@ def save_recovery(form_data):
     email = form_data.get("email_recovery")
     description = f"<p> Fecha: {now} <br> {dni} <br> {contract} <br> {name} <br> {phone} <br> {email} <br> </p>"
     ticket_model.create(
-            {
-                "name": "Solicitud de actualizacion de DNI o CUIT",
-                "description": "-",
-                "category_id": 41,
-                "create_uid": 27,
-                "portal_description": description,
-            }
-        )
+        {
+            "name": "Solicitud de actualización de DNI o CUIT",
+            "description": "-",
+            "category_id": 41,
+            "create_uid": 27,
+            "portal_description": description,
+        }
+    )

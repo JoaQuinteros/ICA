@@ -3,7 +3,6 @@ from datetime import datetime
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
-from django.urls import reverse
 
 from odoo.forms import BaseClaimForm, LoginForm, LoginRecoveryForm
 from odoo.tasks import (
@@ -12,7 +11,6 @@ from odoo.tasks import (
     fetch_contract_open_tickets,
     fetch_contracts_list,
     fetch_initial_balance,
-    #   format_ticket_description,
     save_claim,
     save_recovery,
 )
@@ -65,15 +63,11 @@ def login_recovery_view(request):
         "page": "Recuperación",
         "form": form,
     }
-    if request.method == "POST":
-        if form.is_valid():
-            form_data = form.cleaned_data.copy()
-            save_recovery(form_data)
-            messages.success(request, "La solicitud se registró de forma exitosa.")
-            return render(request, "recovery_form.html", context)
-        else:
-            messages.error(request, "Los datos son erroneos.")
-            return render(request, "recovery_form.html", context)
+    if request.method == "POST" and form.is_valid():
+        form_data = form.cleaned_data.copy()
+        save_recovery(form_data)
+        messages.success(request, "La solicitud se registró de forma exitosa.")
+        return redirect("login")
     return render(request, "recovery_form.html", context)
 
 
@@ -142,8 +136,15 @@ def claim_create_view(request, dni, contract_id):
                 message = "La consulta se registró de forma exitosa."
 
             messages.success(request, message)
-            #return redirect("create_claim", dni=dni, contract_id=contract_id)
-            return redirect("/claim/"+str(dni)+"/"+str(contract_id)+"/?claim_type="+str(claim_type))
+            # return redirect("create_claim", dni=dni, contract_id=contract_id)
+            return redirect(
+                "/claim/"
+                + str(dni)
+                + "/"
+                + str(contract_id)
+                + "/?claim_type="
+                + str(claim_type)
+            )
         else:
             messages.error(request, "Los datos ingresados son incorrectos")
             return render(request, "claim_form.html", context)

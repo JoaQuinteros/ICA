@@ -36,14 +36,21 @@ body {
   z-index: 2;
 }
 
-.form-signin #id_dni_recovery {
+.form-signin .first {
   margin-bottom: -1px;
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 0;
 }
 
-.form-signin #id_client_id {
-  margin-bottom: 10px;
+.form-signin .middle {
+  margin-bottom: -1px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.form-signin .last {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }

@@ -56,7 +56,7 @@ class LoginRecoveryForm(forms.Form):
         max_length=11,
         widget=forms.TextInput(
             attrs={
-                "class": "form-control",
+                "class": "form-control first",
                 "placeholder": "Número de documento o CUIT",
             }
         ),
@@ -67,40 +67,38 @@ class LoginRecoveryForm(forms.Form):
         label="Número de cliente",
         max_length=50,
         widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Número de contrato"}
+            attrs={"class": "form-control middle", "placeholder": "Número de contrato"}
         ),
     )
-
     name_recovery = forms.CharField(
         max_length=100,
         widget=forms.TextInput(
-            attrs={
-                "class": "form-control rounded-end", "placeholder": "Nombre"
-            }
+            attrs={"class": "form-control middle", "placeholder": "Nombre y apellido"}
         ),
         label="Nombre completo",
         validators=[validate_string_has_no_numbers],
     )
-
     phone_recovery = forms.CharField(
         max_length=10,
         widget=forms.TextInput(
             attrs={
-                "class": "form-control rounded-end", "placeholder": "Número de telefono"
+                "class": "form-control middle",
+                "placeholder": "Número de teléfono",
             }
         ),
         label="Número de teléfono de contacto",
         validators=[validate_phone_number],
     )
-
     email_recovery = forms.EmailField(
         widget=forms.EmailInput(
             attrs={
-                "class": "form-control rounded-end", "placeholder": "Dirección de correo electrónico"
+                "class": "form-control last",
+                "placeholder": "Dirección de correo electrónico",
             }
         ),
         label="Email de contacto",
     )
+
 
 class BaseClaimForm(forms.Form):
     def __init__(self, *args, claim_type, has_open_ticket=False, **kwargs):
