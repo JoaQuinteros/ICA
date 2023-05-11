@@ -35,12 +35,13 @@ def fetch_client_data(dni):
         [("vat", "=", dni)],
         ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
     )[0]
-
-    email = client_data.get("email")
-    email_list_separator = email.find(";")
-    if email_list_separator:
-        client_data["email"] = email[:email_list_separator]
-
+    if client_data.get("email"):
+        email = client_data.get("email")
+        email_list_separator = email.find(";")
+        if email_list_separator:
+            client_data["email"] = email[:email_list_separator]
+    else:
+        client_data["email"] = ''    
     return client_data
 
 
@@ -174,7 +175,7 @@ def save_archive(file, open_ticket_id, contract_id):
         "type": "binary",
         "datas": b64encode(file.read()).decode("utf-8"),
         "res_name": f"{file_name}{file_extension}",
-        "store_fname": f"{file_name}",
+        # "store_fname": f"{file_name}",
         "res_model": "helpdesk.ticket",
         "res_id": open_ticket_id,  # Relación con el Ticket
     }
