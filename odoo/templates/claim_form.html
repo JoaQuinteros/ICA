@@ -163,23 +163,22 @@
                         </div>
                     </div>
                 {% endif %}
-
-                <div class="text-center">
-                    <input value="Enviar" class="btn btn-outline-primary m-3" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal"> 
-                    <!-- <button type="submit" class="btn btn-outline-primary"> 
-                        Enviar 
-                    </button>  -->
-                </div>
             </form>
         {% endwith %}
-    
+
+        <div class="row gx-2 pt-2 justify-content-center">
+            <div class="col text-end">
+                <a class="btn btn-outline-secondary" href="{% url 'index' client.vat %}">
+                    <i class="bi bi-arrow-return-left me-2"></i>Volver
+                </a>
+            </div>
+            <div class="col text-start">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal"> 
+                    Enviar 
+                </button>
+            </div>
+        </div>
     {% endif %}
-
-        
-            
-
-  
-
 
     <div class="modal fade" id="claimFormConfirmationModal" tabindex="-1">
         <div class="modal-dialog">
@@ -189,11 +188,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    ¿Desea ingresar un ticket de reclamo con la información ingresada?
+                    ¿Desea enviar un ticket de reclamo con la información ingresada?
                 </div>
                 <div class="modal-footer">
-                    <input type="button" value="Cancelar" class="btn btn-danger m-3" data-bs-dismiss="modal" >
-                    <input type="submit" value="Enviar" class="btn btn-outline-primary m-3" data-bs-dismiss="modal" form="claim_form">
+                    <button class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-outline-primary" data-bs-dismiss="modal" form="claim_form">Confirmar</button>
                 </div>
             </div>
         </div>

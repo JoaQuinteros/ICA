@@ -29,45 +29,54 @@
                     <p>Ingrese los siguientes datos para poder revisar su situación y nos comunicaremos con usted a la brevedad.<br>Muchas gracias!</p>
 
                     {% render_field form.dni_recovery %}
-                    <div class="invalid-feedback">
-                        {{ form.dni_recovery.errors|first }}
-                    </div>
+                    {% if form.dni_recovery.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.dni_recovery.errors|first }}
+                        </div>
+                    {% endif %}
 
                     {% render_field form.client_id %}
-                    <div class="invalid-feedback">
-                        {{ form.client_id.errors|first }}
-                    </div>
+                    {% if form.client_id.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.client_id.errors|first }}
+                        </div>
+                    {% endif %}
 
                     {% render_field form.name_recovery %}
-                    <div class="invalid-feedback">
-                        {{ form.name_recovery.errors|first }}
-                    </div>
+                    {% if form.name_recovery.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.name_recovery.errors|first }}
+                        </div>
+                    {% endif %}
 
                     {% render_field form.phone_recovery %}
-                    <div class="invalid-feedback">
-                        {{ form.phone_recovery.errors|first }}
-                    </div>
+                    {% if form.phone_recovery.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.phone_recovery.errors|first }}
+                        </div>
+                    {% endif %}
 
                     {% render_field form.email_recovery %}
-                    <div class="invalid-feedback">
-                        {{ form.email_recovery.errors|first }}
-                    </div>
-                    
-                    <div class="row gx-2 pt-2 justify-content-center">
-                        <div class="col-auto">
-                            <input value="Enviar" class="btn btn-outline-primary m-3"  data-bs-toggle="modal" data-bs-target="#recoveryModal">
+                    {% if form.email_recovery.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.email_recovery.errors|first }}
                         </div>
-                        <div class="col-auto">
-                            <a class="btn btn-outline-secondary" href="{% url 'login' %}">
-                                <i class="bi bi-arrow-return-left me-2"></i>Volver
-                            </a>
-                        </div>
-                    </div>
+                    {% endif %}
                 </form>
             {% endwith %}
+
+            <div class="row gx-2 pt-2 justify-content-center">
+                <div class="col text-end">
+                    <a class="btn btn-outline-secondary" href="{% url 'login' %}">
+                        <i class="bi bi-arrow-return-left me-2"></i>Volver
+                    </a>
+                </div>
+                <div class="col text-start">
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#recoveryModal">Enviar</button>
+                </div>
+            </div>
         </div>
     </body>
-
 
     <div class="modal fade" id="recoveryModal" tabindex="-1">
         <div class="modal-dialog">
@@ -77,11 +86,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    ¿Desea ingresar un ticket de reclamo con la información ingresada?
+                    ¿Desea enviar la solicitud con la información ingresada?
                 </div>
                 <div class="modal-footer">
-                    <input type="button" value="Cancelar" class="btn btn-danger m-3" data-bs-dismiss="modal" >
-                    <input type="submit" value="Enviar" class="btn btn-outline-primary m-3" data-bs-dismiss="modal" form="recovery_form">
+                    <button class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-outline-primary" data-bs-dismiss="modal" form="recovery_form">Confirmar</button>
                 </div>
             </div>
         </div>
