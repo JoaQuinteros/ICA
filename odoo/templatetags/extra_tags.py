@@ -23,8 +23,8 @@ def receipt_ref(value):
 
 
 @register.filter
-def format_date(value):
-    date = datetime.strptime(value, "%Y-%m-%d").date()
+def format_date(value: str) -> str:
+    date: datetime = datetime.strptime(value, "%Y-%m-%d").date()
     return date.strftime("%d/%m/%Y")
 
 
@@ -42,3 +42,7 @@ def format_claim(value):
              unformatted_string, "", description_clean
          )
     return value_clean
+
+@register.filter
+def format_date_due(value:datetime) -> str:
+    return value.strftime("%d/%m/%Y")

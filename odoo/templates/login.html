@@ -28,6 +28,11 @@
                     {% render_field form.dni %}
                     <div class="invalid-feedback">
                         {{ form.dni.errors|first }}
+                    </div>  
+                    <br>
+                    {% render_field form.internal_code %}
+                    <div class="invalid-feedback">
+                        {{ form.internal_code.errors|first }}
                     </div>
 
                     <input type="submit" value="Buscar" class="btn btn-outline-primary m-3">

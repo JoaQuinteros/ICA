@@ -49,6 +49,16 @@ class LoginForm(forms.Form):
         validators=[validate_id_number_length],
     )
 
+    internal_code = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Código de cliente",
+            }
+        ),
+        label="Código de cliente",
+    )
+
 
 class LoginRecoveryForm(forms.Form):
     dni_recovery = forms.CharField(

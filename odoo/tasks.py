@@ -2,7 +2,7 @@ import os.path
 import re
 from base64 import b64encode
 from datetime import datetime
-
+from django.core.paginator import Paginator
 import odoolib
 import requests
 from decouple import config
@@ -32,17 +32,39 @@ def fetch_client_data(dni):
     connection = get_connection()
     client_model = connection.get_model("res.partner")
     client_data = client_model.search_read(
-        [("vat", "=", dni)],
-        ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
-    )[0]
+            [("vat", "=", dni)],
+            ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
+        )[0]
     if client_data.get("email"):
         email = client_data.get("email")
         email_list_separator = email.find(";")
         if email_list_separator:
             client_data["email"] = email[:email_list_separator]
     else:
-        client_data["email"] = ''    
+        client_data["email"] = ''
+            
     return client_data
+
+def fetch_client_validate_data(dni, internal_code):
+    connection = get_connection()
+    client_model = connection.get_model("res.partner")
+    if client_model.search_read(
+        [("vat", "=", dni),("internal_code", "=", internal_code)],
+        ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],):
+        client_data = client_model.search_read(
+            [("vat", "=", dni),("internal_code", "=", internal_code)],
+            ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],
+        )[0]
+        if client_data.get("email"):
+            email = client_data.get("email")
+            email_list_separator = email.find(";")
+            if email_list_separator:
+                client_data["email"] = email[:email_list_separator]
+        else:
+            client_data["email"] = ''
+                
+        return client_data
+    return False
 
 
 def fetch_contracts_list(contract_ids):
@@ -147,10 +169,29 @@ def fetch_account_movements(client_id):
     return account_movements_list
 
 
-def fetch_initial_balance(client_id):
+# def fetch_initial_balance(client_id):
+#     connection = get_connection()
+#     account_movement_model = connection.get_model("account.move.line")
+#     initial_balance = account_movement_model.search_read(
+#         [
+#             ("partner_id", "=", client_id),
+#             ("account_id", "=", 6),
+#             ("parent_state", "=", "posted"),
+#         ],
+#         [
+#             "ref",
+#             "date",
+#             "move_id",
+#             "debit",
+#             "credit",
+#         ],
+#     )[-1]
+#     return initial_balance
+
+def fetch_account_move_lines(client_id):
     connection = get_connection()
     account_movement_model = connection.get_model("account.move.line")
-    initial_balance = account_movement_model.search_read(
+    account_move_line = account_movement_model.search_read(
         [
             ("partner_id", "=", client_id),
             ("account_id", "=", 6),
@@ -163,9 +204,56 @@ def fetch_initial_balance(client_id):
             "debit",
             "credit",
         ],
-    )[-1]
-    return initial_balance
+    )
+    return account_move_line
 
+def get_download_url(access_token, id):
+    return f"https://gestion.integralcomunicaciones.com/my/invoices/{id}?access_token={access_token}"
+
+def fetch_get_account_move (request, client_id, client_data):
+    context = {
+    "today": datetime.now().date(),
+    "page": "Movimientos",
+    "client": client_data,
+    "payment_url": f"http://link.integralcomunicaciones.com:4000/linkpago/{client_data.get('internal_code')}",
+    "page_obj": False,
+    }
+    account_move_line_list = fetch_account_move_lines(client_id)
+    account_movements_list = fetch_account_movements(client_id)
+    balance: float = 0.0
+    if account_move_line_list:
+        for account_move_line in account_move_line_list:
+            print(account_move_line)
+            if account_move_line.get('move_id')[0] is not None:
+                for account_move in account_movements_list:
+                    if int(account_move.get('id')) == int(account_move_line.get('move_id')[0]):
+                        if account_move.get('invoice_date_due') is not False:
+                            date_due: datetime = datetime.strptime(account_move.get('invoice_date_due'), "%Y-%m-%d").date()
+                            account_move_line ['invoice_date_due'] = date_due
+                        else:
+                            account_move_line ['invoice_date_due'] = account_move.get('invoice_date_due')
+                        account_move_line ['name'] = account_move.get('name')
+                        account_move_line ['date_move'] = account_move.get('date')
+                        account_move_line ['invoice_payment_state'] = account_move.get('invoice_payment_state')
+                        if account_move.get('access_token'):
+                            account_move_line["download_url"] = get_download_url(
+                            account_move.get('access_token'), account_move.get('id')
+                            )
+            else:
+                account_move_line ['name'] = False
+                account_move_line ['date_move'] = False
+                account_move_line ['invoice_date_due'] = False
+                account_move_line ['invoice_payment_state'] = False
+                account_move_line ['download_url'] = False
+
+        for account_move_line in reversed(account_move_line_list):
+            balance = balance + (account_move_line.get('debit') - account_move_line.get('credit'))
+            account_move_line['balance'] = round(balance, 2)
+        paginator = Paginator(account_move_line_list, 20)
+        page_number: str = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        context["page_obj"] = page_obj
+    return context
 
 def save_archive(file, open_ticket_id, contract_id):
     file_name = f"ticket_{open_ticket_id}_contrato_{contract_id}"

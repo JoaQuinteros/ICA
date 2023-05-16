@@ -4,7 +4,7 @@
 {% block breadcrumb %}
 
     <li class="breadcrumb-item">
-        <a href="{% url 'index' client.vat %}" class="text-decoration-none" style="color: #E77817">
+        <a href="{% url 'index' client.vat client.internal_code %}" class="text-decoration-none" style="color: #E77817">
             Cliente
         </a>
     </li>
@@ -91,33 +91,20 @@
                         <td>{{ account_movement.date|format_date }}</td>
                         <td>
                             {% if account_movement.invoice_date_due %}
-                                {{ account_movement.invoice_date_due|format_date }}
+                                {{ account_movement.invoice_date_due|format_date_due }}
                             {% endif %}
                         </td>
                         <td>{{ account_movement.ref|receipt_ref }}</td>
                         {% if account_movement.name|receipt_type != "RE" and account_movement.name|receipt_type != "NC" %}
-                            <td>$ {{ account_movement.amount_total }}</td>
+                            <td>$ {{ account_movement.debit }}</td>
                             <td> - </td>
                         {% else %}
                             <td> - </td>
-                            <td>$ {{ account_movement.amount_total }}</td>
+                            <td>$ {{ account_movement.credit }}</td>
                         {% endif %}
                         <td>$ {{ account_movement.balance }}</td>
                     </tr>
                 {% endfor %}
-
-                {% if initial_balance and not page_obj.has_next %}
-                    <tr>
-                        <td style="color: #E77817" colspan="7">
-                            Saldo al {{ initial_balance.date|format_date }}
-                        </td>
-                        {% if initial_balance.credit %}
-                            <td>$ {{ initial_balance.credit }}</td>
-                        {% elif initial_balance.debit %}
-                            <td>$ {{ initial_balance.debit }}</td>
-                        {% endif %}
-                    </tr>
-                {% endif %}
             </tbody>
         </table>
     </div>

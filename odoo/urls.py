@@ -5,7 +5,7 @@ from odoo import views
 urlpatterns = [
     path("", views.login_view, name="login"),
     path("login/recovery", views.login_recovery_view, name="login_recovery"),
-    path("index/<str:dni>/", views.index_view, name="index"),
+    path("index/<str:dni>/<str:internal_code>/", views.index_view, name="index"),
     path(
         "claim/<str:dni>/<int:contract_id>/",
         views.claim_create_view,

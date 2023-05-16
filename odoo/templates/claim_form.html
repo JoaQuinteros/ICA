@@ -4,7 +4,7 @@
 {% block breadcrumb %}
 
     <li class="breadcrumb-item">
-        <a href="{% url 'index' client.vat %}" class="text-decoration-none" style="color: #E77817">Cliente</a>
+        <a href="{% url 'index' client.vat client.internal_code %}" class="text-decoration-none" style="color: #E77817">Cliente</a>
     </li>
     <li class="breadcrumb-item active">Reclamo</li>
 
@@ -168,7 +168,7 @@
 
         <div class="row gx-2 pt-2 justify-content-center">
             <div class="col text-end">
-                <a class="btn btn-outline-secondary" href="{% url 'index' client.vat %}">
+                <a class="btn btn-outline-secondary" href="{% url 'index' client.vat client.internal_code %}">
                     <i class="bi bi-arrow-return-left me-2"></i>Volver
                 </a>
             </div>
