@@ -153,63 +153,6 @@ def claim_create_view(request, dni, contract_id):
 
     return render(request, "claim_form.html", context)
 
-
-# def account_movements_list_view(request, dni):
-#     client_data = fetch_client_data(dni)
-#     client_id = client_data.get("id")
-#     initial_balance = fetch_initial_balance(client_id)
-#     print(initial_balance)
-#     account_movements = fetch_account_movements(client_id)
-
-#     balance_credit = initial_balance.get("credit")
-#     balance_debit = initial_balance.get("debit")
-#     balance = 0.0
-
-#     if balance_credit:
-#         balance -= balance_credit
-#     elif balance_debit:
-#         balance += balance_debit
-
-    
-#     filtered_account_movements = []
-#     names = []
-#     for account_movement in account_movements:
-#         receipt_type = account_movement.get("name")
-#         if receipt_type not in names:
-#             filtered_account_movements.append(account_movement)
-#             names.append(receipt_type)
-
-#     for account_movement in reversed(filtered_account_movements):
-#         movement_id = account_movement.get("id")
-#         amount_total = account_movement.get("amount_total")
-#         receipt_type = account_movement.get("name")
-#         access_token = account_movement.get("access_token")
-
-#         if receipt_type.startswith("RE") or receipt_type.startswith("NC"):
-#             balance -= float(amount_total)
-#         else:
-#             balance += float(amount_total)
-#         account_movement["balance"] = round(balance, 2)
-
-#         if access_token:
-#             account_movement["download_url"] = get_download_url(
-#                 access_token, movement_id
-#             )
-
-#     paginator = Paginator(filtered_account_movements, 20)
-#     page_number: str = request.GET.get("page")
-#     page_obj = paginator.get_page(page_number)
-
-#     context = {
-#         "today": datetime.now().date(),
-#         "page": "Movimientos",
-#         "client": client_data,
-#         "payment_url": f"http://link.integralcomunicaciones.com:4000/linkpago/{client_data.get('internal_code')}",
-#         "page_obj": page_obj,
-#         "initial_balance": initial_balance,
-#     }
-#     return render(request, "account_movements_list.html", context)
-
 def account_movements_list_view(request, dni):
 
     client_data = fetch_client_data(dni)
