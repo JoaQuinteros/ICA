@@ -14,11 +14,12 @@ def receipt_type(value):
 @register.filter
 def receipt_ref(value):
     if value:
-        receipt_ref_length = len(value)
-        if value.startswith("Pago"):
-            return value[: receipt_ref_length // 2]
+        ref_1 = value[0:(int(len(value)/2))]
+        ref_2 = value[(int(len(value)/2)):]
+        if ref_1.lower() == ref_2.lower():
+             return ref_1
     else:
-        value = "Pago"
+        value = "-"
     return value
 
 

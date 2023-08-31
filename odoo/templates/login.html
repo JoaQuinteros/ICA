@@ -23,7 +23,7 @@
 
                     <img class="mb-4 img-fluid" src="{% static 'odoo/images/integral.png' %}" alt="" width="200">
 
-                    <p class="h3 m-3 font-weight-normal">Consulta</p>
+                    <p class="h3 m-3 font-weight-normal">Autogestión</p>
 
                     {% render_field form.dni %}
                     <div class="invalid-feedback">
@@ -35,12 +35,12 @@
                         {{ form.internal_code.errors|first }}
                     </div>
 
-                    <input type="submit" value="Buscar" class="btn btn-outline-primary m-3">
+                    <input type="submit" value="Ingresar" class="btn btn-primary m-3">
                 </form>
 
                 <div>
                     <span>
-                        Si tiene problemas para <br> realizar su consulta haga click <a href="{% url 'login_recovery' %}">aquí</a>.
+                        ¿Problemas para ingresar a su autogestión? <br> haga click <a href="{% url 'login_recovery' %}">aquí</a>.
                     </span>
                 </div>
             {% endwith %}

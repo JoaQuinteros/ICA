@@ -62,17 +62,24 @@
                             {{ form.email_recovery.errors|first }}
                         </div>
                     {% endif %}
+                    
+                    {% render_field form.comments %}
+                    {% if form.comments.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.comments.errors|first }}
+                        </div>
+                    {% endif %}
                 </form>
             {% endwith %}
 
             <div class="row gx-2 pt-2 justify-content-center">
                 <div class="col text-end">
-                    <a class="btn btn-outline-secondary" href="{% url 'login' %}">
+                    <a class="btn btn-secondary" href="{% url 'login' %}">
                         <i class="bi bi-arrow-return-left me-2"></i>Volver
                     </a>
                 </div>
                 <div class="col text-start">
-                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#recoveryModal">Enviar</button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#recoveryModal">Enviar</button>
                 </div>
             </div>
         </div>
@@ -89,8 +96,8 @@
                     ¿Desea enviar la solicitud con la información ingresada?
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-outline-primary" data-bs-dismiss="modal" form="recovery_form">Confirmar</button>
+                    <button class="btn btn-danger" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" data-bs-dismiss="modal" form="recovery_form">Confirmar</button>
                 </div>
             </div>
         </div>

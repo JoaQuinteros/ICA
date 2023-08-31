@@ -11,43 +11,84 @@
 
     <div class="text-center">
         <h1 class="my-4">{{ client.name }}</h1>
-        <div class="row align-items-center">
-            <div class="col-sm-2">
-                <div class="card text-center">
-                    <div class="card-header" style="background-color:#e9ecef">DNI / CUIT</div>
-                    <div class="card-body">{{ client.vat }}</div>
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <!--<div class="card-header" style="background-color:#e9ecef">DNI / CUIT</div>-->
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    DNI / CUIT</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ client.vat }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-person-vcard-fill fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Email</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ client.email }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-envelope-fill fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Deuda</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">${{ client.credit }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-sm">
-                <div class="card text-center">
-                    <div class="card-header" style="background-color:#e9ecef">Email</div>
-                    <div class="card-body text-break">{{ client.email }}</div>
-                </div>
-            </div>
-            <div class="col-sm-2">
-                <div class="card text-center">
-                    <div class="card-header" style="background-color:#e9ecef">Deuda</div>
-                    <div class="card-body">${{ client.credit }}</div>
-                </div>
-            </div>
-            <div class="col-sm-2">
-                <a class="btn btn-outline-primary" href="{% url 'account_movements_list' client.vat %}">Comprobantes</a>
+                <a class="btn btn-primary" href="{% url 'account_movements_list' client.vat %}">Ver Facturas y Pagos</a>
+                <br>
+                <br>
+                {% if client.credit %}
+                <a class="btn btn-success" href="{{ payment_url }}">Pagar Saldo</a>
+                {% else %}
+                <a class="btn btn-success disabled" href="#">Pagar Saldo</a>
+                {% endif %}
             </div>
         </div>
     </div>
     
     <hr class="border border-dark border-3 my-4">
 
-    {% for contract in contracts_list %}
-        <div class="card text-center mt-3">
+    {% for contract in contracts_list %} 
+    <div class="row">
+        <div class="col-xl col-md mb-4">
+        <div class="card border-left-warning shadow h-100">
             <div class="card-header">
                 <h5 class="my-2">{{ contract.localidad }}</h5>
+                <h6 class="my-2">{{ contract.domicilio }}</h6> 
             </div>
-            <div class="card-body">
+            <div class="card-body">                    
                 <div class="row align-items-center">
                     <div class="col-sm-3">
                         <div class="input-group">
-                            <span class="input-group-text" style="width:40%">E contrato</span>
+                            <span class="input-group-text" style="width:40%">Contrato</span>
                             {% if not contract.is_terminated %}
                                 <span class="form-control">Activo<i class="bi bi-check-circle ms-2 text-success"></i></span>
                             {% else %}
@@ -55,7 +96,7 @@
                             {% endif %}
                         </div>
                         <div class="input-group mt-1">
-                            <span class="input-group-text" style="width:40%">E conexión</span>
+                            <span class="input-group-text" style="width:40%">Conexión</span>
                             {% if not contract.is_terminated %}
                                 {% if contract.ssid_state == 'up' %}
                                     <span class="form-control"><i class="bi bi-wifi text-success"></i></span>
@@ -67,22 +108,20 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="col-sm mt-1">
-                        <div class="card text-center">
-                            <div class="card-header" style="background-color:#e9ecef">Domicilio</div>
-                            <div class="card-body">{{ contract.domicilio }}</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-2 mt-1">
+                </div>
+                <div class="row">
+                    <div class="col-sm mt-3">
                         {% if contract.active and not contract.is_terminated %}
-                            <a class="btn btn-outline-warning" href="{% url 'claim_create' client.vat contract.id %}">Iniciar Reclamo</a>
+                            <a class="btn btn-dark" href="{% url 'claim_create' client.vat contract.id %}">Realizar Gestión o Reclamo</a>
                         {% elif not contract.is_terminated %}
-                            <a class="btn btn-outline-warning disabled" href="#">Iniciar Reclamo</a>
+                            <a class="btn btn-warning disabled" href="#">Realizar Gestión o Reclamo</a>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     {% endfor %}
 
 {% endblock content %}

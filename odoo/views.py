@@ -40,6 +40,7 @@ def index_view(request, dni, internal_code):
         "page": "Cliente",
         "client": client_data,
         "contracts_list": contracts_list,
+        "payment_url": f"http://link.integralcomunicaciones.com:4000/linkpago/{client_data.get('internal_code')}",
     }
     return render(request, "index.html", context)
 

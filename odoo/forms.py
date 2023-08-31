@@ -76,8 +76,9 @@ class LoginRecoveryForm(forms.Form):
     client_id = forms.CharField(
         label="Número de cliente",
         max_length=50,
+        required=False,
         widget=forms.TextInput(
-            attrs={"class": "form-control middle", "placeholder": "Número de contrato"}
+            attrs={"class": "form-control middle", "placeholder": "Código de cliente (opcional)"}
         ),
     )
     name_recovery = forms.CharField(
@@ -102,11 +103,23 @@ class LoginRecoveryForm(forms.Form):
     email_recovery = forms.EmailField(
         widget=forms.EmailInput(
             attrs={
-                "class": "form-control last",
+                "class": "form-control middle",
                 "placeholder": "Dirección de correo electrónico",
             }
         ),
         label="Email de contacto",
+    )
+    comments = forms.CharField(
+        required=False,
+        max_length=100,
+        widget = forms.Textarea(
+            attrs={
+                "class": "form-control last",
+                "placeholder": "Comentarios",
+                "rows": "auto",
+            }
+        ),
+        label="Comentarios",
     )
 
 

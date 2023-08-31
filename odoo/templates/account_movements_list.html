@@ -16,8 +16,56 @@
 
     <div class="text-center">
         <h1 class="my-4">{{ client.name }}</h1>
-        <div class="row align-items-center">
-            <div class="col-sm-2">
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    DNI / CUIT</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ client.vat }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-person-vcard-fill fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Email</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ client.email }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-envelope-fill fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Deuda</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">${{ client.credit }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+         <!--   <div class="col-sm-2">
                 <div class="card text-center">
                     <div class="card-header" style="background-color:#e9ecef">DNI / CUIT</div>
                     <div class="card-body">{{ client.vat }}</div>
@@ -34,12 +82,12 @@
                     <div class="card-header" style="background-color:#e9ecef">Deuda</div>
                     <div class="card-body">${{ client.credit }}</div>
                 </div>
-            </div>
-            <div class="col-sm-2">
+            </div>-->
+            <div class="col-sm">
                 {% if client.credit %}
-                    <a class="btn btn-outline-primary" href="{{ payment_url }}">Pagar saldo</a>
+                    <a class="btn btn-success" href="{{ payment_url }}">Pagar Saldo</a>
                 {% else %}
-                    <a class="btn btn-outline-primary disabled" href="#">Pagar saldo</a>
+                    <a class="btn btn-success disabled" href="#">Pagar Saldo</a>
                 {% endif %}
             </div>
         </div>
@@ -96,15 +144,24 @@
                                 {{ account_movement.invoice_date_due|format_date_due }}
                             {% endif %}
                         </td>
+                        {% if account_movement.ref %}
                         <td>{{ account_movement.ref|receipt_ref }}</td>
-                        {% if account_movement.name|receipt_type != "RE" and account_movement.name|receipt_type != "NC" %}
-                            <td>$ {{ account_movement.debit }}</td>
-                            <td> - </td>
+                        {% elif account_movement.balanceline < 0 %}
+                        <td>Pago</td>
                         {% else %}
-                            <td> - </td>
-                            <td>$ {{ account_movement.credit }}</td>
+                        <td>-</td>
                         {% endif %}
-                        <td>$ {{ account_movement.balance }}</td>
+                        {% if account_movement.balanceline > 0.0 %}
+                            <td>${{ account_movement.debit }}</td>
+                            <td> - </td>
+                        {% elif account_movement.balanceline < 0.0 %}
+                            <td> - </td>
+                            <td>${{ account_movement.credit }}</td>
+                        {% else %}
+                        <td>-</td>
+                        <td>-</td>
+                        {% endif %}
+                        <td>${{ account_movement.historic }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -58,7 +58,8 @@ def fetch_client_validate_data(dni, internal_code):
         if client_data.get("email"):
             email = client_data.get("email")
             email_list_separator = email.find(";")
-            if email_list_separator:
+            print(email_list_separator)
+            if email_list_separator != -1:
                 client_data["email"] = email[:email_list_separator]
         else:
             client_data["email"] = ''
@@ -93,10 +94,10 @@ def fetch_contracts_list(contract_ids):
         if contract_data:
             domicilio = contract_data.get("domicilio")
             coords_parenthesis = domicilio.rfind("(")
-            if coords_parenthesis:
+            if coords_parenthesis != -1:
                 contract_data["domicilio"] = domicilio[:coords_parenthesis]
             first_dash = domicilio.find("-")
-            if first_dash:
+            if first_dash != -1:
                 contract_data["domicilio"] = domicilio[:first_dash]
             contracts_list.append(contract_data)
 
@@ -203,6 +204,7 @@ def fetch_account_move_lines(client_id):
             "move_id",
             "debit",
             "credit",
+            "balance",
         ],
     )
     return account_move_line
@@ -246,17 +248,21 @@ def fetch_get_account_move (request, client_id, client_data):
                 account_move_line ['invoice_payment_state'] = False
                 account_move_line ['download_url'] = False
 
+
+
         for account_move_line in reversed(account_move_line_list):
             balance = balance + (account_move_line.get('debit') - account_move_line.get('credit'))
-            account_move_line['balance'] = round(balance, 2)
+            account_move_line['historic'] = round(balance, 2)
+            account_move_line['balanceline'] = account_move_line.get('balance')
         paginator = Paginator(account_move_line_list, 20)
         page_number: str = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
         context["page_obj"] = page_obj
     return context
 
-def save_archive(file, open_ticket_id, contract_id):
-    file_name = f"ticket_{open_ticket_id}_contrato_{contract_id}"
+def save_archive(file, open_ticket_id):
+    date_now = datetime.now().strftime("%d/%m/%Y  %H:%M:%S")
+    file_name = f"ticket_{open_ticket_id}_{date_now}"
     file_extension = os.path.splitext(file.name)[1]
     archive_dict = {
         "name": f"{file_name}",
@@ -300,7 +306,7 @@ def save_claim(form_data, open_ticket):
     description = f"Fecha: {now} <br> Nombre: {name} <br> Número de teléfono: {phone_number} <br> Email: {email} <br> Reclamo: {form_description} <br>"
 
     if not open_ticket_id:
-        ticket_model.create(
+        open_ticket_id = ticket_model.create(
             {
                 "partner_id": client_id,
                 "suscripcion_id": contract_id,
@@ -319,10 +325,10 @@ def save_claim(form_data, open_ticket):
     if files:
         if "files" in files:
             file = files["files"]
-            save_archive(file, open_ticket_id, contract_id)
+            save_archive(file, open_ticket_id)
         if "files_second" in files:
             file = files["files_second"]
-            save_archive(file, open_ticket_id, contract_id)
+            save_archive(file, open_ticket_id)
 
 
 def save_recovery(form_data):
@@ -334,7 +340,8 @@ def save_recovery(form_data):
     name = form_data.get("name_recovery")
     phone = form_data.get("phone_recovery")
     email = form_data.get("email_recovery")
-    description = f"<p> Fecha: {now} <br> {dni} <br> {contract} <br> {name} <br> {phone} <br> {email} <br> </p>"
+    comments = form_data.get("comments")
+    description = f"<p> Fecha: {now} <br> DNI: {dni} <br> Cód. de cliente: {contract} <br> Nombre y apellido: {name} <br> Teléfono: {phone} <br> Email: {email} <br> Comentarios: {comments} <br> </p>"
     ticket_model.create(
         {
             "name": "Solicitud de actualización de DNI o CUIT",

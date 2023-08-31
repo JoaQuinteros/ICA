@@ -12,8 +12,43 @@
 
 
 {% block content %}
+<div class="row">
+    <div class="col-xl col-md mb-4">
+    <div class="card border-left-warning shadow h-100">
+        <div class="card-header">
+            <h5 class="my-2">{{ contract.localidad }}</h5>
+            <h6 class="my-2">{{ contract.domicilio }}</h6> 
+        </div>
+        <div class="card-body">                    
+            <div class="row align-items-center">
+                <div class="col-sm-3">
+                    <div class="input-group">
+                        <span class="input-group-text" style="width:40%">Contrato</span>
+                        {% if not contract.is_terminated %}
+                            <span class="form-control">Activo<i class="bi bi-check-circle ms-2 text-success"></i></span>
+                        {% else %}
+                            <span class="form-control">Dado de baja<i class="bi bi-x-circle ms-2 text-danger"></i></span>
+                        {% endif %}
+                    </div>
+                    <div class="input-group mt-1">
+                        <span class="input-group-text" style="width:40%">Conexión</span>
+                        {% if not contract.is_terminated %}
+                            {% if contract.ssid_state == 'up' %}
+                                <span class="form-control"><i class="bi bi-wifi text-success"></i></span>
+                            {% else %}
+                                <span class="form-control"><i class="bi bi-wifi-off text-danger"></i></span>
+                            {% endif %}
+                        {% else %}
+                            <span class="form-control"><i class="bi bi-wifi-off text-danger"></i></span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <div class="card text-center mt-3">
+   <!-- <div class="card text-center mt-3">
         <div class="card-header">
             <h5 class="my-2">{{ contract.localidad }}</h5>
         </div>
@@ -21,7 +56,7 @@
             <div class="row align-items-center">
                 <div class="col-sm-3">
                     <div class="input-group">
-                        <span class="input-group-text" style="width:40%">E contrato</span>
+                        <span class="input-group-text" style="width:40%">Contrato</span>
                         {% if contract.active %}
                             <span class="form-control">Activo<i class="bi bi-check-circle ms-2 text-success"></i></span>
                         {% else %}
@@ -29,7 +64,7 @@
                         {% endif %}
                     </div>
                     <div class="input-group mt-1">
-                        <span class="input-group-text" style="width:40%">E conexión</span>
+                        <span class="input-group-text" style="width:40%">Conexión</span>
                         {% if contract.ssid_state == "up" %}
                             <span class="form-control"><i class="bi bi-wifi text-success"></i></span>
                         {% else %}
@@ -45,12 +80,12 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div>-->
 
     <h1 class="my-4">Generar un nuevo reclamo</h1>
     <form>
-        <div class="input-group mb-3">
-            <label class="input-group-text">Seleccione un tipo de reclamo</label>
+        <div class="mb-3">
+            <label class="fw-bold">Seleccione un tipo de reclamo</label>
             <select class="form-select" onchange="this.form.submit()" name="claim_type">
                 <option disabled selected> --------- </option>
                 {% for key, value in reason_choices.items %}
@@ -113,8 +148,8 @@
                 {% csrf_token %}
 
                 {% if form.name %}
-                    <div class="input-group mb-3">
-                        <span class="input-group-text">{{ form.name.label_tag }}</span>
+                    <div class="mb-3">
+                        {{ form.name.label_tag }}
                         {% render_field form.name %}
                         <div class="invalid-feedback">
                             {{ form.name.errors|first }}
@@ -122,32 +157,40 @@
                     </div>
                 {% endif %}
                 {% if form.phone_number %}
-                    <div class="input-group mb-3">
-                        <span class="input-group-text">{{ form.phone_number.label_tag }}</span>
+                <!--   <div class="input-group mb-3"> 
+                            <span class="input-group-text">{{ form.phone_number.label_tag }}</span>
+                                {% render_field form.phone_number %}
+                                <div class="invalid-feedback">
+                                    {{ form.phone_number.errors|first }}
+                                </div>
+                        </div>  
+                -->
+                    <div class="mb-3"> 
+                        {{ form.phone_number.label_tag }}
                         {% render_field form.phone_number %}
                         <div class="invalid-feedback">
                             {{ form.phone_number.errors|first }}
                         </div>
-                    </div>
+                    </div>  
                 {% endif %}
                 {% if form.email %}
-                    <div class="input-group mb-3">
-                        <span class="input-group-text">{{ form.email.label_tag }}</span>
+                    <div class="mb-3">
+                        {{ form.email.label_tag }}
                         {% render_field form.email %}
                         <div class="invalid-feedback">
                             {{ form.email.errors|first }}
                         </div>
                     </div>
                 {% endif %}
-                <div class="input-group mb-3">
-                    <span class="input-group-text">{{ form.description.label_tag }}</span>
+                <div class="mb-3">
+                    {{ form.description.label_tag }}
                     {% render_field form.description %}
                     <div class="invalid-feedback">
                         {{ form.description.errors|first }}
                     </div>
                 </div>
                 {% if form.files %}
-                    <div class="input-group mb-3">
+                    <div class="mb-3">
                         {% render_field form.files %}
                         <div class="invalid-feedback">
                             {{ form.files.errors|first }}
@@ -156,7 +199,7 @@
                 {% endif %}
 
                 {% if form.files_second %}
-                    <div class="input-group mb-3">
+                    <div class="mb-3">
                         {% render_field form.files_second %}
                         <div class="invalid-feedback">
                             {{ form.files_second.errors|first }}
@@ -168,12 +211,12 @@
 
         <div class="row gx-2 pt-2 justify-content-center">
             <div class="col text-end">
-                <a class="btn btn-outline-secondary" href="{% url 'index' client.vat client.internal_code %}">
+                <a class="btn btn-secondary" href="{% url 'index' client.vat client.internal_code %}">
                     <i class="bi bi-arrow-return-left me-2"></i>Volver
                 </a>
             </div>
             <div class="col text-start">
-                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal"> 
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#claimFormConfirmationModal"> 
                     Enviar 
                 </button>
             </div>
@@ -191,8 +234,8 @@
                     ¿Desea enviar un ticket de reclamo con la información ingresada?
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-outline-primary" data-bs-dismiss="modal" form="claim_form">Confirmar</button>
+                    <button class="btn btn-danger" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" data-bs-dismiss="modal" form="claim_form">Confirmar</button>
                 </div>
             </div>
         </div>
