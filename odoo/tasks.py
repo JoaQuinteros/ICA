@@ -1,12 +1,17 @@
+import json
 import os.path
 import re
 from base64 import b64encode
 from datetime import datetime
+from django.conf import settings
 from django.core.paginator import Paginator
 import odoolib
+import qrcode
 import requests
 from decouple import config
 from django.core.exceptions import ValidationError
+
+from pudge.settings import STATIC_ROOT_QR
 
 
 def get_connection():
@@ -48,6 +53,7 @@ def fetch_client_data(dni):
 def fetch_client_validate_data(dni, internal_code):
     connection = get_connection()
     client_model = connection.get_model("res.partner")
+    print(client_model)
     if client_model.search_read(
         [("vat", "=", dni),("internal_code", "=", internal_code)],
         ["id", "internal_code", "name", "email", "vat", "contract_ids", "credit"],):
@@ -351,3 +357,75 @@ def save_recovery(form_data):
             "portal_description": description,
         }
     )
+
+def geneate_token():
+    login_data = {
+    "client_id": config("NARANJA_X_CLIENT_ID"),
+    "client_secret": config("NARANJA_X_CLIENT_SECRET"),
+    "audience": config("NARANJA_X_AUDIENCE"),
+    "grant_type": config("NARANJA_X_GRANT_TYPE"),
+    "cache": True 
+    }
+    token_url = 'https://homoservices.apinaranja.com/security-ms/api/security/auth0/b2b/m2ms'
+    json_login = json.dumps(login_data)
+    response = requests.post(token_url, headers={'Content-Type': 'application/json'}, data=json_login)
+    response_json = json.loads(response.text)
+    return response_json.get('access_token')
+
+def generate_payment_qr(token, client_data):
+        dni: str = client_data.get("vat")
+        credit: str = str(client_data.get("credit"))
+        internal_code: str = client_data.get("internal_code")
+        name: str = client_data.get("name")
+        payment_url = "https://e3-checkout.apinaranja.com/api/payment_request/dynamic_qr"
+        body = {
+        "external_payment_id": internal_code+"-"+dni,
+        "transactions": [
+            {
+            "products": [
+                {
+                "name": "Pago abono de internet DNI: "+dni,
+                "quantity": 1,
+                "unit_price": {
+                    "currency": "ARS",
+                    "value": credit
+                }
+                }
+            ],
+            "amount": {
+                "currency": "ARS",
+                "value": credit
+            },
+            "soft_descriptor": "Pago de abono de internet DNI"+dni+" Por Naranja QR"
+            }
+        ],
+        "additional_info": {},
+        "seller": {
+            "callback_url": "https://webhook.site/dfe4e693-fcd5-45d7-9fae-5fd90062428b",
+            "pos_id": "fc6ffb82-b6f3-428a-a007-5b099fe676ba"
+        },
+        "buyer": {
+            "doc_number": dni,
+            "doc_type": "DNI",
+            "name": name
+        },
+        "shipping": {}
+        }
+        
+        print(body)
+        response = requests.post(payment_url, headers={'Authorization': token, 'Content-Type': 'application/json'}, data=json.dumps(body))
+        response_json = json.loads(response.text)
+        print(response_json)
+        number_id = response_json.get('id')
+        external_payment_id = response_json.get('external_payment_id')
+        #print(response.content)
+        qr = qrcode.QRCode(version=3, box_size=20, border=10, error_correction=qrcode.constants.ERROR_CORRECT_H)
+        response_json = json.loads(response.text)
+        qr.add_data(response_json.get('qr_data'))
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        #img.save("qr_code.png")
+        img.save(os.path.join(STATIC_ROOT_QR, "qr_code_"+dni+".png"))
+        payment = {'id': number_id, 'external_payment_id': external_payment_id, 'img': "/static/qr/qr_code_"+dni+".png"}
+        print("CREACIÓN DE PAGOOOOOO")
+        return payment

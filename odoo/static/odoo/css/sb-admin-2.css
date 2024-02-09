@@ -11281,3 +11281,11 @@ body.sidebar-toggled footer.sticky-footer {
 i.fa-2x {
   font-size:2em!important;
 }
+
+@media screen and (max-width: 500px) {
+  #qr{
+    width: 80%;
+    height: 80%;
+  }
+}
+

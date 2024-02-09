@@ -2,3 +2,4 @@ django
 odoo-client-lib
 python-decouple
 django-widget-tweaks
+qrcode

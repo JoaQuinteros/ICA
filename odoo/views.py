@@ -14,6 +14,8 @@ from odoo.tasks import (
     fetch_account_move_lines,
     fetch_get_account_move,
     fetch_client_validate_data,
+    geneate_token,
+    generate_payment_qr,
 )
 
 REASON_CHOICES = {
@@ -165,3 +167,27 @@ def account_movements_list_view(request, dni):
     else:
         messages.info(request, "No se encontró el cliente buscado.")
         return redirect("index", dni, internal_code)
+    
+def generate_qr_view(request, dni):
+    client_data = fetch_client_data(dni)
+    client_id: str = client_data.get("id")
+    internal_code: str = client_data.get("internal_code") 
+    context = {
+        "page": "Reclamo",
+        "client": client_data,
+    }
+
+
+    #if client_id:
+    #    context = fetch_get_account_move(request, client_id, client_data)
+    #    return render(request, "account_movements_list.html", context)
+    #else:
+    #    messages.info(request, "No se encontró el cliente buscado.")
+    #    return redirect("index", dni, internal_code)
+    
+    #GENERAR TOKEN
+    token = geneate_token()
+    payment_qr = generate_payment_qr(token, client_data)
+    context["payment_qr"] = payment_qr
+    print(context)
+    return render(request, "generate_qr.html", context)

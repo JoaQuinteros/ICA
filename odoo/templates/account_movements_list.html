@@ -21,29 +21,34 @@
                 <div class="card border-left-warning shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
+                            <div class="col-auto-center">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     DNI / CUIT</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ client.vat }}</div>
                             </div>
-                            <div class="col-auto">
-                                <i class="bi bi-person-vcard-fill fa-2x text-gray-300"></i>
+                            <!-- <div class="col-auto"> -->
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto-center">
+                                    <i class="bi bi-person-vcard-fill fa-2x text-gray-300"></i>
+                                </div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>
+        </div>
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-warning shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
+                            <div class="col-auto-center">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     Email</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ client.email }}</div>
                             </div>
-                            <div class="col-auto">
-                                <i class="bi bi-envelope-fill fa-2x text-gray-300"></i>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto-center">
+                                    <i class="bi bi-envelope-fill fa-2x text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -53,13 +58,15 @@
                 <div class="card border-left-warning shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
+                            <div class="col-auto-center">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     Deuda</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">${{ client.credit }}</div>
                             </div>
-                            <div class="col-auto">
-                                <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto-center">
+                                    <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -183,6 +190,11 @@
         {% endif %}
     </ul>
     {% endif %}    
-    <script src="{% static 'odoo/js/tooltips.js' %}"></script>
+    <script src="{% static 'odoo/js/tooltips.js' %}"></script>        <div class="row gx-2 pt-2 justify-content-center">
+            <div class="col text-center">
+                    <a class="btn btn-secondary" href="{% url 'index' client.vat client.internal_code %}">
+                        <i class="bi bi-arrow-return-left me-2"></i>Volver
+                    </a>
+            </div>
 
 {% endblock content %}

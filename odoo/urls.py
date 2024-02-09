@@ -19,4 +19,9 @@ urlpatterns = [
         views.account_movements_list_view,
         name="account_movements_list",
     ),
+    path(
+        "generate_qr_view/<str:dni>/",
+        views.generate_qr_view,
+        name="generate_qr",
+    ),
 ]
