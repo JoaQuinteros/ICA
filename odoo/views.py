@@ -191,3 +191,4 @@ def generate_qr_view(request, dni):
     context["payment_qr"] = payment_qr
     print(context)
     return render(request, "generate_qr.html", context)
+
