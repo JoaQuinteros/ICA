@@ -43,7 +43,7 @@ def fetch_client_data(dni):
     if client_data.get("email"):
         email = client_data.get("email")
         email_list_separator = email.find(";")
-        if email_list_separator:
+        if email_list_separator != -1:
             client_data["email"] = email[:email_list_separator]
     else:
         client_data["email"] = ''
