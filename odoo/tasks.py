@@ -446,9 +446,13 @@ def generate_payment_qr_with_amount(token, client_data, amount):
         internal_code: str = client_data.get("internal_code")
         name: str = client_data.get("name")
         amount_credit = None
-        if type(amount) is int:
-            amount_credit: str = str(amount)
-            amount_credit = amount_credit+".00"
+        try: 
+            float(amount)
+            amount_credit: str = str(format(float(amount),".2f"))
+            if amount_credit.find(".") is False:
+                amount_credit = amount_credit+".00"
+        except:
+            amount_credit = None
         payment_url = "https://api.ranty.io/api/payment_request/dynamic_qr" #PROD
         #payment_url = "https://e3-checkout.apinaranja.com/api/payment_request/dynamic_qr" #TEST
         body = {
