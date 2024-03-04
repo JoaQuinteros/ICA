@@ -78,6 +78,9 @@
                 <a class="btn btn-secondary" href="{% url 'generate_qr' client.vat %}">Generar QR de pago</a>
                 {% else %}
                 <a class="btn btn-success disabled" href="#">Pagar Saldo</a>
+                <br>
+                <br>
+                <a class="btn btn-secondary disabled" href="{% url 'generate_qr' client.vat %}">Generar QR de pago</a>
                 {% endif %}
             </div>
         </div>
