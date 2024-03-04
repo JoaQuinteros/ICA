@@ -16,6 +16,7 @@ from odoo.tasks import (
     fetch_client_validate_data,
     geneate_token,
     generate_payment_qr,
+    generate_payment_qr_with_amount,
 )
 
 REASON_CHOICES = {
@@ -190,5 +191,20 @@ def generate_qr_view(request, dni):
     payment_qr = generate_payment_qr(token, client_data)
     context["payment_qr"] = payment_qr
     print(context)
+    return render(request, "generate_qr.html", context)
+
+def generate_qr_view_with_amount(request, dni, amount):
+    client_data = fetch_client_data(dni)
+    client_id: str = client_data.get("id")
+    internal_code: str = client_data.get("internal_code") 
+    context = {
+        "page": "Reclamo",
+        "client": client_data,
+    }
+    
+    #GENERAR TOKEN
+    token = geneate_token()
+    payment_qr = generate_payment_qr_with_amount(token, client_data, amount)
+    context["payment_qr"] = payment_qr
     return render(request, "generate_qr.html", context)
 

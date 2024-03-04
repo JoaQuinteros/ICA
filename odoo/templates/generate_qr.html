@@ -71,7 +71,11 @@
         </div>
         <hr class="border border-dark border-3 my-4">
     <div class="row">
+        {% if payment_qr.amount_credit is not None %}
+        <h3 class="my-4">Pago por código QR del monto $ {{ payment_qr.amount_credit }}</h3>
+        {% else %}
         <h3 class="my-4">Pago por código QR del monto $ {{ client.credit }}</h3>
+        {% endif %}
         <div style="text-align: center;">
             <img src="{{payment_qr.img}}" alt="qr" width="500" height="500" id="qr">
         </div>

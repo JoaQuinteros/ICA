@@ -24,4 +24,9 @@ urlpatterns = [
         views.generate_qr_view,
         name="generate_qr",
     ),
+    path(
+    "generate_qr_view/<str:dni>/<int:amount>/",
+    views.generate_qr_view_with_amount,
+    name="generate_qr_with_amount",
+    ),
 ]
