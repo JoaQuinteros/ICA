@@ -439,3 +439,73 @@ def generate_payment_qr(token, client_data):
         print(response_json.get('qr_data'))
         print("CREACIÓN DE PAGOOOOOO")
         return payment
+
+def generate_payment_qr_with_amount(token, client_data, amount):
+        dni: str = client_data.get("vat")
+        credit: str = str(format(client_data.get("credit"),".2f"))
+        internal_code: str = client_data.get("internal_code")
+        name: str = client_data.get("name")
+        amount_credit = None
+        if type(amount) is int:
+            amount_credit: str = str(amount)
+            amount_credit = amount_credit+".00"
+        payment_url = "https://api.ranty.io/api/payment_request/dynamic_qr" #PROD
+        #payment_url = "https://e3-checkout.apinaranja.com/api/payment_request/dynamic_qr" #TEST
+        body = {
+        "external_payment_id": internal_code,
+        "transactions": [
+            {
+            "products": [
+                {
+                "name": "Pago del cliente DNI: "+dni,
+                "quantity": 1,
+                "unit_price": {
+                    "currency": "ARS",
+                    "value": amount_credit
+                }
+                }
+            ],
+            "amount": {
+                "currency": "ARS",
+                "value": amount_credit
+            },
+            "soft_descriptor": "Pago del cliente DNI "+dni+" Por Naranja QR"
+            }
+        ],
+        "additional_info": {},
+        "seller": {
+            "callback_url": "http://link.integralcomunicaciones.com:4001/QRNX", #PROD
+            "pos_id": "3506d1e1-3772-4f01-9125-7648f8e82432" #PROD
+            #"callback_url": "https://webhook.site/dfe4e693-fcd5-45d7-9fae-5fd90062428b",
+            #"pos_id": "fc6ffb82-b6f3-428a-a007-5b099fe676ba"
+        },
+        "buyer": {
+            "doc_number": dni,
+            "doc_type": "DNI",
+            "name": name
+        },
+        "shipping": {}
+        }
+        
+        print(body)
+        response = requests.post(payment_url, headers={'Authorization': token, 'Content-Type': 'application/json'}, data=json.dumps(body))
+        response_json = json.loads(response.text)
+        print(response_json)
+        number_id = response_json.get('id')
+        external_payment_id = response_json.get('external_payment_id')
+        #print(response.content)
+        
+        payment = {'id': number_id, 'external_payment_id': external_payment_id, 'img': "/static/qr/error.png", 'amount_credit':amount_credit}
+        if response_json.get('qr_data') is not None:
+            qr = qrcode.QRCode(version=3, box_size=20, border=10, error_correction=qrcode.constants.ERROR_CORRECT_H)
+            response_json = json.loads(response.text)
+            qr.add_data(response_json.get('qr_data'))
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            #img.save("qr_code.png")
+            img.save(os.path.join(STATIC_ROOT_QR, "qr_code_"+dni+".png"))
+            #payment = {'id': number_id, 'external_payment_id': external_payment_id, 'img': "/static/qr/qr_code_"+dni+".png"}
+            payment['img']= "/static/qr/qr_code_"+dni+".png"
+        print(response_json.get('qr_data'))
+        print("CREACIÓN DE PAGOOOOOO")
+        return payment
